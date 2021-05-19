@@ -1,0 +1,15 @@
+﻿{
+	"Name": "RaisedGardenBeds",
+	"Author": "blueberry",
+	"Version": "1.0.0",
+	"Description": "What the..?",
+	"UniqueID": "ModAuthor.RaisedGardenBeds",
+	"EntryDll": "RaisedGardenBeds.dll",
+	"MinimumApiVersion": "3.0.0",
+	"Dependencies": [
+		{
+			"UniqueID": "spacechase0.JsonAssets"
+		}
+	],
+	"UpdateKeys": [ "Nexus:5305" ]
+}

@@ -1,0 +1,38 @@
+﻿{
+	"Name": "blueberry.rgb.raisedbed",
+	"Description": "...",
+	"Price": 80,
+	"ProvidesLight": false,
+
+	"CanPurchase": false,
+	"PurchaseFrom": "Robin",
+	"PurchasePrice": 150,
+	"PurchaseRequirements": null,
+
+	"Recipe": {
+		"ResultCount": 1,
+		"Ingredients": [
+			{
+				"Object": 388, // Wood
+				"Count": 20
+			}
+			/*{
+				"Object": 709, // Hardwood
+				"Count": 3
+			},
+			{
+				"Object": 390, // Stone
+				"Count": 6
+			}*/
+		],
+		"IsDefault": true,
+		"CanPurchase": false,
+		"PurchaseFrom": "Robin",
+		"PurchasePrice": 150,
+		"PurchaseRequirements": null
+	},
+
+	"NameLocalization": {
+		"en": "Raised Bed"
+	}
+}
