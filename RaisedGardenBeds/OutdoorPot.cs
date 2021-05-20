@@ -55,17 +55,25 @@ namespace RaisedGardenBeds
 		/// </summary>
 		internal const int BreakageDefault = 28;
 		/// <summary>
-		/// If <see cref="StardewValley.Object.MinutesUntilReady"/> is above this value, the object will not be broken at the end of the season.
+		/// Value for <see cref="StardewValley.Object.MinutesUntilReady"/> where the object is marked for breakage.
 		/// </summary>
-		internal const int BreakageGracePeriod = 6;
+		internal const int BreakageTarget = 0;
 		/// <summary>
 		/// When broken, <see cref="StardewValley.Object.MinutesUntilReady"/> is set to this value.
 		/// </summary>
 		internal const int BreakageDefinite = -300;
 		/// <summary>
+		/// If <see cref="StardewValley.Object.MinutesUntilReady"/> is above this value, the object will not be broken at the end of the season.
+		/// </summary>
+		internal const int BreakageWeakPeriod = 4;
+		/// <summary>
 		/// Whether the object is marked as broken, preventing it from planting or growing seeds and crops.
 		/// </summary>
 		public bool IsBroken => this.MinutesUntilReady <= OutdoorPot.BreakageDefinite;
+		/// <summary>
+		/// Whether the object is ready to be broken at the end of the season.
+		/// </summary>
+		public bool IsReadyToBreak => this.MinutesUntilReady < OutdoorPot.BreakageWeakPeriod && this.MinutesUntilReady > OutdoorPot.BreakageDefinite;
 
 
 		public OutdoorPot() : this(tileLocation: Vector2.Zero) {}
@@ -118,6 +126,7 @@ namespace RaisedGardenBeds
 			Vector2 tileLocation = new Vector2(x, y) / Game1.tileSize;
 			location.Objects[tileLocation] = new OutdoorPot(tileLocation: tileLocation);
 			OutdoorPot.AdjustAll(specificLocation: location);
+			Game1.player.reduceActiveItemByOne();
 			return false;
 		}
 
@@ -129,12 +138,49 @@ namespace RaisedGardenBeds
 
 		public override bool performToolAction(Tool t, GameLocation location)
 		{
+			if (this.IsBroken)
+			{
+				// Broken objects will not return to the inventory when broken, but will provide a small refund
+				location.playSound("axchop");
+				// visual debris
+				Game1.createRadialDebris(
+					location: location, debrisType: 12,
+					xTile: (int)tileLocation.X, yTile: (int)tileLocation.Y,
+					numberOfChunks: Game1.random.Next(4, 10), resource: false);
+				// refund debris
+				List<int> recipe = Game1.content.Load
+					<Dictionary<string, string>>
+					(System.IO.Path.Combine("Data", "CraftingRecipes"))
+					[this.Name].Split('/')[0].Split(' ').ToList().ConvertAll(int.Parse);
+				int refundItem = recipe[0];
+				int refundQuantity = recipe[1] / 4;
+				Game1.createRadialDebris(
+					location: location, debrisType: refundItem,
+					xTile: (int)tileLocation.X - 1, yTile: (int)tileLocation.Y - 1,
+					numberOfChunks: refundQuantity,
+					resource: false, groundLevel: -1,
+					item: true);
+				Multiplayer multiplayer = ModEntry.Instance.Helper.Reflection.GetField<Multiplayer>(typeof(Game1), "multiplayer").GetValue();
+				multiplayer.broadcastSprites(
+					location: location,
+					sprites: new TemporaryAnimatedSprite(
+						rowInAnimationTexture: 12,
+						position: new Vector2(tileLocation.X * 64f, tileLocation.Y * 64f),
+						color: Color.White,
+						animationLength: 8,
+						flipped: Game1.random.NextDouble() < 0.5,
+						animationInterval: 50));
+				location.Objects.Remove(this.TileLocation);
+				return false;
+			}
 			bool whacked = base.performToolAction(t, location);
 			if (whacked)
 			{
+				Game1.createItemDebris(item: this.getOne(), origin: this.TileLocation * 64f, direction: -1);
+				location.Objects.Remove(this.TileLocation);
 				OutdoorPot.AdjustAllOnNextTick(specificLocation: location);
 			}
-			return whacked;
+			return false;
 		}
 
 		public override bool performObjectDropInAction(Item dropInItem, bool probe, Farmer who)
@@ -160,17 +206,17 @@ namespace RaisedGardenBeds
 			return l.IsFarm && l.IsOutdoors && clearTiles && clearObjects;
 		}
 
+		public override bool canStackWith(ISalable other)
+		{
+			return other.Name == this.Name;
+		}
+
 		public override void DayUpdate(GameLocation location)
 		{
 			base.DayUpdate(location);
 			if (ModEntry.Config.RaisedBedsBreakWithAge)
 			{
-				if (this.MinutesUntilReady == 0)
-				{
-					// Reset breakage timer if enabled in config after objects were forced to the neutral 0 days value
-					this.MinutesUntilReady = OutdoorPot.BreakageDefault;
-				}
-				else if (this.IsBroken)
+				if (this.IsBroken)
 				{
 					// If this object is broken, its crop shouldn't be allowed to grow
 					this.hoeDirt.Value.crop?.ResetPhaseDays();
@@ -180,7 +226,7 @@ namespace RaisedGardenBeds
 			else
 			{
 				// Ignore breakage timer when disabled
-				this.MinutesUntilReady = 0;
+				this.MinutesUntilReady = OutdoorPot.BreakageDefault;
 			}
 		}
 
@@ -333,10 +379,7 @@ namespace RaisedGardenBeds
 		{
 			void breakAllInLocation(GameLocation location)
 			{
-				List<OutdoorPot> pots = location.Objects.Values.Where(
-						o => o is OutdoorPot p
-							&& p.MinutesUntilReady < OutdoorPot.BreakageGracePeriod)
-					.Cast<OutdoorPot>().ToList();
+				List<OutdoorPot> pots = location.Objects.Values.Where(o => o is OutdoorPot p && p.IsReadyToBreak).Cast<OutdoorPot>().ToList();
 				foreach (OutdoorPot pot in pots)
 				{
 					pot.Break(location: location, adjust: false);

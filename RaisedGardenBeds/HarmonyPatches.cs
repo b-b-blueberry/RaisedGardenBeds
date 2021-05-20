@@ -23,6 +23,9 @@ namespace RaisedGardenBeds
 				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(GameLocation_IsTileOccupiedForPlacement_Postfix)));
 			// Crafting
 			harmony.Patch(
+				original: AccessTools.Method(typeof(CraftingPage), "performHoverAction"),
+				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_PerformHoverAction_Postfix)));
+			harmony.Patch(
 				original: AccessTools.Method(typeof(CraftingPage), "clickCraftingRecipe"),
 				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_ClickCraftingRecipe_Prefix)));
 		}
@@ -33,13 +36,22 @@ namespace RaisedGardenBeds
 			Vector2 tileLocation, StardewValley.Object toPlace)
 		{
 			__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o);
-			if (toPlace != null && toPlace.Category == -74 && o != null && o is OutdoorPot)
+			if (toPlace != null && (toPlace.Category == -74 || toPlace.Category == -19) && o != null && o is OutdoorPot)
 			{
 				if ((o as OutdoorPot).hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19) && (o as OutdoorPot).bush.Value == null)
 				{
 					__result = false;
 				}
 			}
+		}
+
+		internal static void CraftingPage_PerformHoverAction_Postfix(CraftingRecipe ___hoverRecipe)
+		{
+			// Add display name in crafting pages
+			if (___hoverRecipe == null)
+				return;
+			if (___hoverRecipe.name.StartsWith(ModEntry.ItemName))
+				___hoverRecipe.DisplayName = ModEntry.Instance.i18n.Get("item.name");
 		}
 
 		internal static bool CraftingPage_ClickCraftingRecipe_Prefix(

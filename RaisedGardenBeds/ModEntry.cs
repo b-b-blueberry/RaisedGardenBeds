@@ -2,6 +2,7 @@
 using StardewValley;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using System.Linq;
 using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -34,6 +35,7 @@ namespace RaisedGardenBeds
 			helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
 			helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 			helper.ConsoleCommands.Add(name: CommandPrefix + "give", "Drop some raised bed items.", Give);
+			helper.ConsoleCommands.Add(name: CommandPrefix + "prebreak", "Mark all raised beds as ready to break.", Mark);
 		}
 
 		private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
@@ -88,6 +90,14 @@ namespace RaisedGardenBeds
 			if (!Game1.player.addItemToInventoryBool(item))
 			{
 				Game1.createItemDebris(item: item, origin: Game1.player.Position, direction: -1);
+			}
+		}
+
+		public static void Mark(string s, string[] args)
+		{
+			foreach (OutdoorPot o in Game1.getFarm().Objects.Values.Where(o => o is OutdoorPot p && p.MinutesUntilReady > 0).Cast<OutdoorPot>())
+			{
+				o.MinutesUntilReady = OutdoorPot.BreakageTarget;
 			}
 		}
 
