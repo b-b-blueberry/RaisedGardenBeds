@@ -9,6 +9,7 @@ using StardewModdingAPI;
 using Microsoft.Xna.Framework;
 using StardewValley.Menus;
 using Harmony; // el diavolo
+using Microsoft.Xna.Framework.Graphics;
 
 namespace RaisedGardenBeds
 {
@@ -28,6 +29,9 @@ namespace RaisedGardenBeds
 			harmony.Patch(
 				original: AccessTools.Method(typeof(CraftingPage), "clickCraftingRecipe"),
 				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_ClickCraftingRecipe_Prefix)));
+			harmony.Patch(
+				original: AccessTools.Method(typeof(CraftingRecipe), "getIndexOfMenuView"),
+				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingRecipe_GetIndexOfMenuView_Postfix)));
 		}
 
 		public static void GameLocation_IsTileOccupiedForPlacement_Postfix(
@@ -51,47 +55,64 @@ namespace RaisedGardenBeds
 			if (___hoverRecipe == null)
 				return;
 			if (___hoverRecipe.name.StartsWith(ModEntry.ItemName))
-				___hoverRecipe.DisplayName = ModEntry.Instance.i18n.Get("item.name");
+				___hoverRecipe.DisplayName = ModEntry.Instance.i18n.Get($"item.name.{___hoverRecipe.name.Split('.').Last()}");
 		}
 
 		internal static bool CraftingPage_ClickCraftingRecipe_Prefix(
 			CraftingPage __instance,
-			int ___currentCraftingPage, Item ___heldItem,
+			int ___currentCraftingPage,
+			ref Item ___heldItem,
 			ClickableTextureComponent c, bool playSound = true)
 		{
 			try
 			{
 				// Fetch an instance of any clicked-on craftable in the crafting menu
 				CraftingRecipe recipe = __instance.pagesOfCraftingRecipes[___currentCraftingPage][c];
-				Item tempItem = recipe.createItem();
 
 				// Fall through to default method for any other craftables
-				if (!tempItem.Name.StartsWith(ModEntry.ItemName))
+				if (!recipe.name.StartsWith(ModEntry.ItemName))
 					return true;
 
+				OutdoorPot item = new OutdoorPot(
+					variant: ModEntry.ItemDefinitions.Keys.ToList()
+						.IndexOf(ModEntry.ItemDefinitions.First(kvp => kvp.Value["RecipeItems"].Split(' ')[0] == recipe.recipeList.Keys.ToList()[0].ToString()).Key),
+					tileLocation: Vector2.Zero);
+
 				// Behaviours as from base method
+				recipe.consumeIngredients(null);
+				if (playSound)
+					Game1.playSound("coin");
 				if (___heldItem == null)
 				{
-					recipe.consumeIngredients(null);
-					___heldItem = tempItem;
-					if (playSound)
-						Game1.playSound("coin");
+					___heldItem = item;
+				}
+				else if (___heldItem.canStackWith(item))
+				{
+					___heldItem.addToStack(item);
 				}
 				if (Game1.player.craftingRecipes.ContainsKey(recipe.name))
 					Game1.player.craftingRecipes[recipe.name] += recipe.numberProducedPerCraft;
-				if (___heldItem == null || !Game1.player.couldInventoryAcceptThisItem(___heldItem))
-					return false;
-
-				// Add the machine to the user's inventory
-				OutdoorPot item = new OutdoorPot();
-				if (Game1.player.addItemToInventoryBool(item))
+				Game1.stats.checkForCraftingAchievements();
+				if (Game1.options.gamepadControls && ___heldItem != null && Game1.player.couldInventoryAcceptThisItem(___heldItem))
+				{
+					Game1.player.addItemToInventoryBool(___heldItem);
 					___heldItem = null;
+				}
+
 				return false;
 			}
 			catch (Exception e)
 			{
 				Log.E(ModEntry.Instance.ModManifest.UniqueID + " failed in " + nameof(CraftingPage_ClickCraftingRecipe_Prefix) + "\n" + e);
 				return true;
+			}
+		}
+
+		internal static void CraftingRecipe_GetIndexOfMenuView_Postfix(CraftingRecipe __instance, ref int __result)
+		{
+			if (__instance.name.StartsWith(ModEntry.ItemName))
+			{
+				__result = OutdoorPot.GetParentSheetIndexFromName(name: __instance.name);
 			}
 		}
 	}

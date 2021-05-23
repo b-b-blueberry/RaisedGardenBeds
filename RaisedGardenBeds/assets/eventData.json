@@ -1,0 +1,10 @@
+{
+	"Events": [
+		{
+			"Conditions": "u 28/z summer/z fall/z winter",
+			"Who": "Robin",
+			"Where": "Farm",
+			"Script": "continue/64 15/farmer 64 16 2 {0} 64 18 0/skippable/pause 1500/speak {0} {1}"
+		}
+	]
+}

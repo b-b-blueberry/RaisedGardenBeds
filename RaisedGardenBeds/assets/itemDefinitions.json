@@ -1,0 +1,86 @@
+{
+	"wood": {
+		"RecipeItems": "388 20", // Wood
+		"RecipeIsDefault": true,
+		"RecipeConditions": null,
+		"DaysToBreak": 44,
+		"SoilHeightAboveGround": 8
+	},
+	"stone": {
+		"RecipeItems": "390 20", // Stone
+		"RecipeIsDefault": true,
+		"RecipeConditions": null,
+		"DaysToBreak": 60,
+		"SoilHeightAboveGround": 8
+	},
+	"clay": {
+		"RecipeItems": "330 10", // Clay
+		"RecipeIsDefault": true,
+		"RecipeConditions": null,
+		"DaysToBreak": 60,
+		"SoilHeightAboveGround": 8
+	},
+	"hardwood": {
+		"RecipeItems": "709 5", // Hardwood
+		"RecipeIsDefault": false,
+		"RecipeConditions": null,
+		"DaysToBreak": 84,
+		"SoilHeightAboveGround": 10
+	},
+	"driftwood": {
+		"RecipeItems": "169 3", // Driftwood
+		"RecipeIsDefault": false,
+		"RecipeConditions": null,
+		"DaysToBreak": 32,
+		"SoilHeightAboveGround": 5
+	},
+	"gold": {
+		"RecipeItems": "336 2", // Gold Bar
+		"RecipeIsDefault": false,
+		"RecipeConditions": "m 1000000",
+		"DaysToBreak": 9999,
+		"SoilHeightAboveGround": 4
+	},
+	"void": {
+		"RecipeItems": "769 10 390 10", // Void Essence, Stone
+		"RecipeIsDefault": false,
+		"RecipeConditions": "n slimeHutchBuilt",
+		"DaysToBreak": 128,
+		"SoilHeightAboveGround": 9
+	},
+	"jungle": {
+		"RecipeItems": "771 5 390 10", // Fibre, Stone
+		"RecipeIsDefault": false,
+		"RecipeConditions": "n hasPickedUpMagicInk",
+		"DaysToBreak": 60,
+		"SoilHeightAboveGround": 6
+	},
+	"spooky": {
+		"RecipeItems": "382 2 390 10", // Coal, Stone
+		"RecipeIsDefault": false,
+		"RecipeConditions": "b 1",
+		"DaysToBreak": 84,
+		"SoilHeightAboveGround": 8
+	},
+	"candy": {
+		"RecipeItems": "245 2 388 10", // Sugar, Wood
+		"RecipeIsDefault": false,
+		"RecipeConditions": "n winter_14",
+		"DaysToBreak": 84,
+		"SoilHeightAboveGround": 8
+	},
+	"beach": {
+		"RecipeItems": "388 20", // Wood
+		"RecipeIsDefault": false,
+		"RecipeConditions": "n summer_10",
+		"DaysToBreak": 44,
+		"SoilHeightAboveGround": 7
+	},
+	"bone": {
+		"RecipeItems": "881 5 390 10", // Bone Fragment, Stone
+		"RecipeIsDefault": false,
+		"RecipeConditions": "n fall_26",
+		"DaysToBreak": 84,
+		"SoilHeightAboveGround": 6
+	}
+}
