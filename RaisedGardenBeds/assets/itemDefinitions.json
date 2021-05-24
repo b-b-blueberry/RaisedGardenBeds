@@ -32,14 +32,14 @@
 		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 32,
-		"SoilHeightAboveGround": 5
+		"SoilHeightAboveGround": 6
 	},
 	"gold": {
 		"RecipeItems": "336 2", // Gold Bar
 		"RecipeIsDefault": false,
 		"RecipeConditions": "m 1000000",
 		"DaysToBreak": 9999,
-		"SoilHeightAboveGround": 4
+		"SoilHeightAboveGround": 6
 	},
 	"void": {
 		"RecipeItems": "769 10 390 10", // Void Essence, Stone

@@ -11,6 +11,17 @@ using Newtonsoft.Json;
 
 namespace RaisedGardenBeds
 {
+	// TODO: FEATURE: Add GMCM config support, including IngameOptin
+	// TODO: FEATURE: Look into sprinkler radius
+	// TODO: TEST: See StardewValley.Farmer.cs:tryToCraftItem()
+	/*
+		if (bigCraftable)
+		{
+			Game1.player.ActiveObject = new Object(Vector2.Zero, itemToCraft);
+			Game1.player.showCarrying();
+		}
+	*/
+
 	public class ModEntry : Mod, IAssetLoader, IAssetEditor
 	{
 		internal static ModEntry Instance;
@@ -23,23 +34,20 @@ namespace RaisedGardenBeds
 		internal static Dictionary<string, string> EventData = null;
 		internal static List<Dictionary<string, string>> Events = null;
 		// assets
-		internal const string AssetPrefix = "blueberry.rgb.assets";
+		internal const string AssetPrefix = "blueberry.rgb.Assets";
 		internal const string ItemName = "blueberry.rgb.raisedbed";
 		internal static readonly string ContentPackPath = Path.Combine("assets", "ContentPack");
-		internal static readonly string GameContentEventDataPath = Path.Combine(AssetPrefix, "eventData");
+		internal static readonly string GameContentEventDataPath = Path.Combine(AssetPrefix, "EventData");
 		internal static readonly string LocalEventDataPath = Path.Combine("assets", "eventData.json");
-		internal static readonly string GameContentItemDefinitionsPath = Path.Combine(AssetPrefix, "itemDefinitions");
+		internal static readonly string GameContentItemDefinitionsPath = Path.Combine(AssetPrefix, "ItemDefinitions");
 		internal static readonly string LocalItemDefinitionsPath = Path.Combine("assets", "itemDefinitions.json");
-		internal static readonly string GameContentSpritesPath = Path.Combine(AssetPrefix, "sprites");
+		internal static readonly string GameContentSpritesPath = Path.Combine(AssetPrefix, "Sprites");
 		internal static readonly string LocalSpritesPath = Path.Combine("assets", "sprites.png");
 		// others
 		internal const string CommandPrefix = "rgb";
 		internal static int ModUpdateKey = -1;
 		internal static int EventRoot => ModUpdateKey * 10000;
 
-
-		// TODO: FEATURE: Add GMCM config support, including IngameOptin
-		// TODO: FEATURE: Look into sprinkler radius
 
 		public override void Entry(IModHelper helper)
 		{
@@ -49,6 +57,7 @@ namespace RaisedGardenBeds
 			HarmonyPatches.Patch(id: ModManifest.UniqueID);
 
 			helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
+			helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
 			helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
 			helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 			helper.ConsoleCommands.Add(name: CommandPrefix + "give", "Drop some raised bed items.", Cmd_Give);
@@ -60,13 +69,22 @@ namespace RaisedGardenBeds
 			Helper.Events.GameLoop.OneSecondUpdateTicked += this.Event_LoadLate;
 		}
 
+		private void GameLoop_SaveLoaded(object sender, SaveLoadedEventArgs e)
+		{
+			if (Context.IsMainPlayer)
+			{
+				// Reinitialise objects to recalculate XmlIgnore values
+				OutdoorPot.AdjustAll(reinitialise: true);
+			}
+		}
+
 		private void GameLoop_DayStarted(object sender, DayStartedEventArgs e)
 		{
 			// Ensure generic object recipe is unavailable
 			//Game1.player.craftingRecipes.Remove(ItemName);
 
+			// Invalidate sprites at the start of each day in case patches target the asset
 			OutdoorPot.ReloadSprites();
-			OutdoorPot.AdjustAll();
 		}
 
 		private void GameLoop_DayEnding(object sender, DayEndingEventArgs e)
@@ -92,8 +110,8 @@ namespace RaisedGardenBeds
 		private void LoadApis()
 		{
 			// SpaceCore
-			ISpaceCoreAPI spacecoreApi = Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
-			spacecoreApi.RegisterSerializerType(typeof(OutdoorPot));
+			ISpaceCoreAPI spacecoreAPI = Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
+			spacecoreAPI.RegisterSerializerType(typeof(OutdoorPot));
 
 			// Json Assets
 			JsonAssets = Helper.ModRegistry.GetApi<IJsonAssetsApi>("spacechase0.JsonAssets");
@@ -103,6 +121,29 @@ namespace RaisedGardenBeds
 				return;
 			}
 			JsonAssets.LoadAssets(Path.Combine(Helper.DirectoryPath, ContentPackPath));
+
+			// Generic Mod Config Menu
+			IGenericModConfigMenuAPI modconfigAPI = Helper.ModRegistry.GetApi<IGenericModConfigMenuAPI>("spacechase0.GenericModConfigMenu");
+			modconfigAPI.RegisterModConfig(
+				ModManifest,
+				revertToDefault: () => Config = new Config(),
+				saveToFile: () => Helper.WriteConfig(Config));
+			modconfigAPI.SetDefaultIngameOptinValue(
+				ModManifest,
+				optedIn: true);
+			System.Reflection.PropertyInfo[] properties = Config.GetType().GetProperties()
+				.Where(p => p.PropertyType == typeof(bool)).ToArray();
+			foreach (System.Reflection.PropertyInfo property in properties)
+			{
+				string key = property.Name.ToLower();
+				Translation description = i18n.Get("config." + key + ".description");
+				modconfigAPI.RegisterSimpleOption(
+					ModManifest,
+					optionName: i18n.Get("config." + key + ".name"),
+					optionDesc: description.HasValue() ? description : null,
+					optionGet: () => (bool)property.GetValue(Config),
+					optionSet: (bool value) => property.SetValue(Config, value: value));
+			}
 		}
 
 		public static List<string> GetNewRecipes()
@@ -112,14 +153,16 @@ namespace RaisedGardenBeds
 			{
 				string varietyName = ItemDefinitions.Keys.ElementAt(i);
 				string fullVarietyName = ItemName + "." + varietyName;
-				int varietyID = EventRoot + varietyName.GetHashCode();
+				int eventID = EventRoot + i;
 				int precondition = !Game1.player.craftingRecipes.ContainsKey(fullVarietyName)
 					&& (Config.RecipesAlwaysAvailable
 						|| bool.Parse(ItemDefinitions[varietyName]["RecipeIsDefault"])
 						|| (string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])
 							&& !Game1.player.eventsSeen.Contains(EventRoot)))
 					? 1
-					: Game1.getFarm().checkEventPrecondition(varietyID.ToString() + "/" + ItemDefinitions[varietyName]["RecipeConditions"]);
+					: Game1.getFarm().checkEventPrecondition(
+						eventID.ToString() + "/" + (string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])
+						? "null" : ItemDefinitions[varietyName]["RecipeConditions"]));
 				if (precondition != -1)
 				{
 					newVarieties.Add(fullVarietyName);

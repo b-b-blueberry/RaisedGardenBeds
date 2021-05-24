@@ -7,9 +7,9 @@ using StardewValley.Locations;
 using StardewValley.Tools;
 using StardewModdingAPI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using StardewValley.Menus;
 using Harmony; // el diavolo
-using Microsoft.Xna.Framework.Graphics;
 
 namespace RaisedGardenBeds
 {
@@ -20,7 +20,7 @@ namespace RaisedGardenBeds
 			HarmonyInstance harmony = HarmonyInstance.Create(id);
 			// GameLocation
 			harmony.Patch(
-				original: AccessTools.Method(typeof(StardewValley.GameLocation), "isTileOccupiedForPlacement"),
+				original: AccessTools.Method(typeof(GameLocation), "isTileOccupiedForPlacement"),
 				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(GameLocation_IsTileOccupiedForPlacement_Postfix)));
 			// Crafting
 			harmony.Patch(
@@ -35,17 +35,16 @@ namespace RaisedGardenBeds
 		}
 
 		public static void GameLocation_IsTileOccupiedForPlacement_Postfix(
-			StardewValley.GameLocation __instance,
+			GameLocation __instance,
 			ref bool __result,
 			Vector2 tileLocation, StardewValley.Object toPlace)
 		{
 			__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o);
-			if (toPlace != null && (toPlace.Category == -74 || toPlace.Category == -19) && o != null && o is OutdoorPot)
+			if (toPlace != null && (toPlace.Category == -74 || toPlace.Category == -19) && o != null && o is OutdoorPot op
+				&& op.hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19)
+				&& op.bush.Value == null)
 			{
-				if ((o as OutdoorPot).hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19) && (o as OutdoorPot).bush.Value == null)
-				{
-					__result = false;
-				}
+				__result = false;
 			}
 		}
 
@@ -55,7 +54,7 @@ namespace RaisedGardenBeds
 			if (___hoverRecipe == null)
 				return;
 			if (___hoverRecipe.name.StartsWith(ModEntry.ItemName))
-				___hoverRecipe.DisplayName = ModEntry.Instance.i18n.Get($"item.name.{___hoverRecipe.name.Split('.').Last()}");
+				___hoverRecipe.DisplayName = OutdoorPot.GetDisplayNameFromVariantKey(___hoverRecipe.name);
 		}
 
 		internal static bool CraftingPage_ClickCraftingRecipe_Prefix(
