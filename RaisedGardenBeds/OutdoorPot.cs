@@ -1,15 +1,13 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Netcode;
+using StardewValley;
+using StardewValley.Locations;
+using StardewValley.TerrainFeatures;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using StardewValley;
-using StardewValley.Objects;
-using StardewValley.Locations;
-using StardewModdingAPI;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework;
-using StardewValley.TerrainFeatures;
 using System.Xml.Serialization;
-using Netcode;
 
 namespace RaisedGardenBeds
 {
@@ -703,8 +701,8 @@ namespace RaisedGardenBeds
 				Math.Max(0, origin.X - radius),
 				Math.Max(0, origin.Y - radius));
 			Point end = new Point(
-				Math.Min(location.Map.GetLayer("Back").TileWidth, origin.X + radius),
-				Math.Min(location.Map.GetLayer("Back").TileHeight, origin.Y + radius));
+				Math.Min(location.Map.GetLayer("Back").DisplayWidth / Game1.tileSize, origin.X + radius),
+				Math.Min(location.Map.GetLayer("Back").DisplayHeight / Game1.tileSize, origin.Y + radius));
 
 			for (int x = start.X; x <= end.X; ++x)
 			{
@@ -721,7 +719,8 @@ namespace RaisedGardenBeds
 
 		private static bool CheckNeighbour(OutdoorPot p, StardewValley.Object o)
 		{
-			return o != null && p != null && o is OutdoorPot op && op.Variant == p.Variant && !op.IsBroken;
+			bool facts = o != null && p != null && o is OutdoorPot op && op.Variant == p.Variant && !op.IsBroken;
+			return facts;
 		}
 
 		public static void ReloadSprites()

@@ -55,7 +55,7 @@
 		"DaysToBreak": 60,
 		"SoilHeightAboveGround": 6
 	},
-	"spooky": {
+	"dungeon": {
 		"RecipeItems": "382 2 390 10", // Coal, Stone
 		"RecipeIsDefault": false,
 		"RecipeConditions": "b 1",
