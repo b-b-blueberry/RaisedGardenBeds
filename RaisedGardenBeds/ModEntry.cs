@@ -2,13 +2,17 @@
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace RaisedGardenBeds
 {
-	// TODO: FEATURE: Look into sprinkler radius
+	// TODO: TEST: Garden bed breakage at end of season under natural conditions
+	// TODO: TEST: Garden bed unlock conditions for each variant
+	// TODO: TEST: Root event condition and script
+	// TODO: TEST: Gamepad interactions: Crafting, hoeDirt.crop, heldObject, tool action, dropin action, replacing broken
 
 	public class ModEntry : Mod
 	{
@@ -24,7 +28,6 @@ namespace RaisedGardenBeds
 		internal static List<Dictionary<string, string>> Events = null;
 
 		// others
-		internal const string ItemName = "blueberry.rgb.raisedbed";
 		internal const string CommandPrefix = "rgb";
 		internal static int ModUpdateKey = -1;
 		internal static int EventRoot => ModUpdateKey * 10000;
@@ -139,6 +142,7 @@ namespace RaisedGardenBeds
 
 			Helper.ConsoleCommands.Add(name: CommandPrefix + "give", "Drop some raised bed items.", Cmd_Give);
 			Helper.ConsoleCommands.Add(name: CommandPrefix + "prebreak", "Mark all raised beds as ready to break.", Cmd_Prebreak);
+			Helper.ConsoleCommands.Add(name: CommandPrefix + "checkdirt", "Check whether garden bed under cursor is watered.", Cmd_CheckDirt);
 		}
 
 		public static List<string> GetNewRecipes()
@@ -147,7 +151,7 @@ namespace RaisedGardenBeds
 			for (int i = 0; i < ItemDefinitions.Count; ++i)
 			{
 				string varietyName = ItemDefinitions.Keys.ElementAt(i);
-				string fullVarietyName = ItemName + "." + varietyName;
+				string fullVarietyName = OutdoorPot.GenericName + "." + varietyName;
 				int eventID = EventRoot + i;
 				int precondition = !Game1.player.craftingRecipes.ContainsKey(fullVarietyName)
 					&& (Config.RecipesAlwaysAvailable
@@ -179,7 +183,7 @@ namespace RaisedGardenBeds
 				};
 				if (!Game1.player.addItemToInventoryBool(item))
 				{
-					Log.W("Inventory full: Did not add " + key + " raised bed.");
+					Log.D("Inventory full: Did not add " + key + " raised bed.");
 				}
 			}
 		}
@@ -188,13 +192,26 @@ namespace RaisedGardenBeds
 		{
 			if (!Config.RaisedBedsMayBreakWithAge)
 			{
-				Log.W("Breakage is disabled in mod config file!");
+				Log.D("Breakage is disabled in mod config file!");
 				return;
 			}
 			foreach (OutdoorPot o in Game1.getFarm().Objects.Values.OfType<OutdoorPot>().Where(o => o.MinutesUntilReady > 0))
 			{
 				o.Unbreak();
 			}
+		}
+
+		private void Cmd_CheckDirt(string arg1, string[] arg2)
+		{
+			Vector2 tile = Game1.currentCursorTile;
+			Game1.currentLocation.Objects.TryGetValue(tile, out StardewValley.Object o);
+			if (o != null && o is OutdoorPot op)
+			{
+				Log.D($"RGB.OP.HD at {tile} == {op.hoeDirt.Value.state.Value} (sprite: {op.showNextIndex.Value})");
+				return;
+			}
+
+			Log.D($"No RGB.OP at {tile}.");
 		}
 	}
 }

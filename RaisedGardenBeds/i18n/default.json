@@ -18,14 +18,16 @@
 
 	"config.raisedbedsmaybreakwithage.name": "Garden beds break with age",
 	"config.raisedbedsmaybreakwithage.description": "Garden beds will deteriorate at the start of each new season if enabled.\nThe lifespan of each variety of bed differs,\nwith more expensive varieties lasting longer!\n\nMulti-season crops growing in garden beds will survive if their bed is broken,\nbut they won't keep growing until it's repaired!\nRepair a garden bed by placing another of the same variety in its place,\nor destroy it to regain some of the resources used to build it.",
-	"config.recipesalwaysavailable.name": "Recipes always available",
-	"config.recipesalwaysavailable.description": "All varieties will be available all the time.\nIf disabled, Robin will give you basic recipes starting in Summer,\nand you'll learn more recipes through playing!",
 	"config.canbeplacedingreenhouse.name": "Can be placed in greenhouse",
 	"config.canbeplacedingreenhouse.description": "",
 	"config.canbeplacedinfarmhouse.name": "Can be placed in farmhouse",
 	"config.canbeplacedinfarmhouse.description": "",
 	"config.canbeplacedinbuildings.name": "Can be placed in farm buildings",
 	"config.canbeplacedinbuildings.description": "",
+	"config.recipesalwaysavailable.name": "Recipes always available",
+	"config.recipesalwaysavailable.description": "All varieties will be available all the time.\nIf disabled, Robin will give you basic recipes starting in Summer,\nand you'll learn more recipes through playing!",
+	"config.sprinklersenabled.name": "Sprinklers enabled",
+	"config.sprinklersenabled.description": "Garden beds will be watered by sprinklers.",
 
 	"event.0.dialogue": "\"event dialogue goes here\""
 }

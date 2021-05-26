@@ -94,7 +94,7 @@ namespace RaisedGardenBeds
 			}
 
 			// Game data
-			int id = ModEntry.JsonAssets == null ? -1 : ModEntry.JsonAssets.GetBigCraftableId(ModEntry.ItemName);
+			int id = ModEntry.JsonAssets == null ? -1 : ModEntry.JsonAssets.GetBigCraftableId(OutdoorPot.GenericName);
 			if (id < 0)
 				return;
 			if (asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables")))
@@ -149,7 +149,7 @@ namespace RaisedGardenBeds
 			{
 				// Add crafting recipes for all object variants
 				var data = asset.AsDictionary<string, string>().Data;
-				string[] fields = data[ModEntry.ItemName].Split('/');
+				string[] fields = data[OutdoorPot.GenericName].Split('/');
 				foreach (KeyValuePair<string, Dictionary<string, string>> idAndFields in ModEntry.ItemDefinitions)
 				{
 					string[] newFields = new string[]
@@ -161,7 +161,7 @@ namespace RaisedGardenBeds
 						idAndFields.Value["RecipeConditions"] ?? "null",	// Recipe availability conditions
 						i18n.Get("item.name." + idAndFields.Key)	// Recipe display name
 					};
-					data[ModEntry.ItemName + "." + idAndFields.Key] = string.Join("/", newFields);
+					data[OutdoorPot.GenericName + "." + idAndFields.Key] = string.Join("/", newFields);
 				}
 				return;
 			}

@@ -13,6 +13,19 @@ namespace RaisedGardenBeds
 		{
 			HarmonyInstance harmony = HarmonyInstance.Create(id);
 
+			// Utility
+			harmony.Patch(
+				original: AccessTools.Method(typeof(Utility), "isThereAnObjectHereWhichAcceptsThisItem"),
+				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix)));
+			harmony.Patch(
+				original: AccessTools.Method(typeof(Utility), "isViableSeedSpot"),
+				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(Utility_IsViableSeedSpot_Prefix)));
+
+			// Object
+			harmony.Patch(
+				original: AccessTools.Method(typeof(StardewValley.Object), "ApplySprinkler"),
+				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(Object_ApplySprinkler_Prefix)));
+
 			// GameLocation
 			harmony.Patch(
 				original: AccessTools.Method(typeof(GameLocation), "isTileOccupiedForPlacement"),
@@ -30,6 +43,85 @@ namespace RaisedGardenBeds
 				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingRecipe_GetIndexOfMenuView_Postfix)));
 		}
 
+		private static void ErrorHandler(Exception e)
+		{
+			Log.E(ModEntry.Instance.ModManifest.UniqueID + " failed in harmony prefix.\n" + e);
+		}
+
+		public static bool Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix(
+			ref bool __result,
+			GameLocation location,
+			Item item,
+			int x,
+			int y)
+		{
+			try
+			{
+				Vector2 tileLocation = new Vector2(x / Game1.tileSize, y / Game1.tileSize);
+				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+				{
+					if (!OutdoorPot.IsItemPlantable(item) && op.IsOpenForPlacement())
+					{
+						__result = op.performObjectDropInAction(dropInItem: (StardewValley.Object)item, probe: true, who: Game1.player);
+					}
+					else
+					{
+						__result = false;
+					}
+					return false;
+				}
+			}
+			catch (Exception e)
+			{
+				HarmonyPatches.ErrorHandler(e);
+			}
+			return true;
+		}
+
+		public static bool Utility_IsViableSeedSpot_Prefix(
+			GameLocation location,
+			Vector2 tileLocation,
+			Item item)
+		{
+			try
+			{
+				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op
+					&& OutdoorPot.IsItemPlantable(item) && op.CanPlantHere(item) && op.IsOpenForPlacement())
+				{
+					return true;
+				}
+				return false;
+			}
+			catch (Exception e)
+			{
+				HarmonyPatches.ErrorHandler(e);
+			}
+			return true;
+		}
+
+		public static bool Object_ApplySprinkler_Prefix(
+			GameLocation location,
+			Vector2 tile)
+		{
+			try
+			{
+				if (ModEntry.Config.SprinklersEnabled
+					&& location.Objects.TryGetValue(tile, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+				{
+					if (op.IsOpenForPlacement(ignoreCrops: true))
+					{
+						op.Water();
+					}
+					return false;
+				}
+			}
+			catch (Exception e)
+			{
+				HarmonyPatches.ErrorHandler(e);
+			}
+			return true;
+		}
+
 		/// <summary>
 		/// Replace logic for choosing whether objects can be placed into a custom garden bed.
 		/// </summary>
@@ -39,12 +131,14 @@ namespace RaisedGardenBeds
 			Vector2 tileLocation,
 			StardewValley.Object toPlace)
 		{
-			__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o);
-			if (toPlace != null && (toPlace.Category == -74 || toPlace.Category == -19) && o != null && o is OutdoorPot op
-				&& op.hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19)
-				&& op.bush.Value == null)
+			if (__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 			{
-				__result = false;
+				bool isPlantable = OutdoorPot.IsItemPlantable(toPlace)
+					&& op.hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19);
+				if (op.IsOpenForPlacement() && isPlantable)
+				{
+					__result = false;
+				}
 			}
 		}
 
@@ -57,7 +151,7 @@ namespace RaisedGardenBeds
 			// Add display name in crafting pages
 			if (___hoverRecipe == null)
 				return;
-			if (___hoverRecipe.name.StartsWith(ModEntry.ItemName))
+			if (___hoverRecipe.name.StartsWith(OutdoorPot.GenericName))
 				___hoverRecipe.DisplayName = OutdoorPot.GetDisplayNameFromVariantKey(___hoverRecipe.name);
 		}
 
@@ -77,7 +171,7 @@ namespace RaisedGardenBeds
 				CraftingRecipe recipe = __instance.pagesOfCraftingRecipes[___currentCraftingPage][c];
 
 				// Fall through to default method for any other craftables
-				if (!recipe.name.StartsWith(ModEntry.ItemName))
+				if (!recipe.name.StartsWith(OutdoorPot.GenericName))
 					return true;
 
 				OutdoorPot item = new OutdoorPot(
@@ -110,9 +204,9 @@ namespace RaisedGardenBeds
 			}
 			catch (Exception e)
 			{
-				Log.E(ModEntry.Instance.ModManifest.UniqueID + " failed in " + nameof(CraftingPage_ClickCraftingRecipe_Prefix) + "\n" + e);
-				return true;
+				HarmonyPatches.ErrorHandler(e);
 			}
+			return true;
 		}
 
 		/// <summary>
@@ -122,7 +216,7 @@ namespace RaisedGardenBeds
 			CraftingRecipe __instance,
 			ref int __result)
 		{
-			if (__instance.name.StartsWith(ModEntry.ItemName))
+			if (__instance.name.StartsWith(OutdoorPot.GenericName))
 			{
 				__result = OutdoorPot.GetParentSheetIndexFromName(name: __instance.name);
 			}
