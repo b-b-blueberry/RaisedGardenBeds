@@ -9,9 +9,6 @@ using System.Linq;
 
 namespace RaisedGardenBeds
 {
-	// TODO: TEST: Per-screen menus when multiple players are viewing the same menu
-
-
 	public class NewRecipeMenu : IClickableMenu
 	{
 		public Dictionary<string, int> NewVarieties = new Dictionary<string, int>();
@@ -29,9 +26,10 @@ namespace RaisedGardenBeds
 		public NewRecipeMenu(List<string> newVarieties)
 			: base(x: 0,  y: 0, width: 0,  height: 0)
 		{
+			Game1.player.team.endOfNightStatus.UpdateState(ModEntry.EndOfNightState);
 			this.NewVarieties = newVarieties.ToDictionary(variety => variety, variety => OutdoorPot.GetParentSheetIndexFromName(variety));
 			this.width = (int)Dimensions.X;
-			this.height = ((int)Dimensions.Y / 2) + (NewVarieties.Count * Game1.smallestTileSize * 2 * Game1.pixelZoom);
+			this.height = ((int)Dimensions.Y / 2) + (this.NewVarieties.Count * Game1.smallestTileSize * 2 * Game1.pixelZoom);
 			this.OkButton = new ClickableTextureComponent(
 				bounds: Rectangle.Empty,
 				texture: Game1.mouseCursors,
@@ -41,6 +39,7 @@ namespace RaisedGardenBeds
 				myID = NewRecipeMenu.OkButtonId
 			};
 
+			this._isActive = true;
 			this._timerBeforeStart = 250;
 			Game1.player.completelyStopAnimatingOrDoingAction();
 			Game1.player.freezePause = 100;
@@ -79,11 +78,11 @@ namespace RaisedGardenBeds
 
 		public override void receiveKeyPress(Keys key)
 		{
-			if (Game1.options.SnappyMenus
-				&& !Game1.options.doesInputListContain(Game1.options.cancelButton, key)
-				&& !Game1.options.doesInputListContain(Game1.options.menuButton, key))
+			if (Game1.options.doesInputListContain(Game1.options.cancelButton, key)
+				|| Game1.options.doesInputListContain(Game1.options.menuButton, key)
+				|| Game1.options.doesInputListContain(Game1.options.journalButton, key))
 			{
-				base.receiveKeyPress(key);
+				this.OkButtonClicked();
 			}
 		}
 
@@ -106,6 +105,7 @@ namespace RaisedGardenBeds
 			
 			if (this._timerBeforeStart > 0)
 			{
+				this._informationUp = true;
 				this._timerBeforeStart -= time.ElapsedGameTime.Milliseconds;
 				if (this._timerBeforeStart <= 0 && Game1.options.SnappyMenus)
 				{
@@ -167,20 +167,6 @@ namespace RaisedGardenBeds
 				destinationRectangle: new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
 				color: Color.Black * 0.5f);
 			
-			// ???
-			b.Draw(
-				texture: Game1.mouseCursors,
-				position: new Vector2(
-					this.xPositionOnScreen + (width / 2) - 116,
-					this.yPositionOnScreen - 32 + 12),
-				sourceRectangle: new Rectangle(363, 87, 58, 22),
-				color: Color.White,
-				rotation: 0f,
-				origin: Vector2.Zero,
-				scale: Game1.pixelZoom,
-				effects: SpriteEffects.None,
-				layerDepth: 1f);
-			
 			if (!this._informationUp && this._isActive && this.StarIcon != null)
 			{
 				this.StarIcon.draw(b);
@@ -190,6 +176,127 @@ namespace RaisedGardenBeds
 				if (!this._informationUp)
 					return;
 				
+				// Draw popup header
+				const int wh = 16;
+				Vector2 padding = new Vector2(22, -8) * Game1.pixelZoom;
+				string title = Game1.content.LoadString("Strings\\StringsFromCSFiles:Object.cs.13074", "");
+				const float iconScale = 3f;
+				Vector2 iconSize = new Vector2(26, 20);
+				Vector2 textSize = Game1.dialogueFont.MeasureString(title);
+				textSize = new Vector2(
+					textSize.X + padding.X + (iconSize.X * iconScale),
+					Math.Max(textSize.Y, iconSize.Y * iconScale) + padding.Y);
+				Vector2 positionPadded = new Vector2(
+					this.xPositionOnScreen + ((this.width - textSize.X - (wh * Game1.pixelZoom)) / 2),
+					this.yPositionOnScreen - textSize.Y - (wh * Game1.pixelZoom / 2) - (2 * Game1.pixelZoom));
+				Point sourceOrigin = new Point(260, 310);
+				// background
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle(
+						(int)(positionPadded.X + (wh * Game1.pixelZoom / 2)),
+						(int)(positionPadded.Y + (wh * Game1.pixelZoom / 2)),
+						(int)(textSize.X),
+						(int)(textSize.Y + (wh * Game1.pixelZoom))),
+					sourceRectangle: new Rectangle(360, 437, 1, 8),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+
+				// icon
+				b.Draw(
+					texture: Game1.mouseCursors,
+					position: positionPadded + new Vector2(wh * Game1.pixelZoom) + new Vector2(0, -8f * iconScale),
+					sourceRectangle: new Rectangle(420, 488, (int)iconSize.X, (int)iconSize.Y),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					scale: iconScale,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+
+				// top-left
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X, (int)positionPadded.Y, wh * Game1.pixelZoom, wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X, sourceOrigin.Y, wh, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// top-right
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X + (int)textSize.X, (int)positionPadded.Y, wh * Game1.pixelZoom, wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X + 28, sourceOrigin.Y, wh, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// bottom-left
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X, (int)positionPadded.Y + (int)textSize.Y + (wh * Game1.pixelZoom), wh * Game1.pixelZoom, wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X, sourceOrigin.Y + 16, wh, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// bottom-right
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X + (int)textSize.X, (int)positionPadded.Y + (int)textSize.Y + (wh * Game1.pixelZoom), wh * Game1.pixelZoom, wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X + 28, sourceOrigin.Y + 16, wh, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// top
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)(positionPadded.X + (wh * Game1.pixelZoom)), (int)positionPadded.Y, (int)textSize.X - (wh * Game1.pixelZoom), wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X + wh, sourceOrigin.Y, 1, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// bottom
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)(positionPadded.X + (wh * Game1.pixelZoom)), (int)(positionPadded.Y + textSize.Y + (wh * Game1.pixelZoom)), (int)textSize.X - (wh * Game1.pixelZoom), wh * Game1.pixelZoom),
+					sourceRectangle: new Rectangle(sourceOrigin.X + wh, sourceOrigin.Y + 16, 1, wh),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// left
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X, (int)positionPadded.Y + (wh * Game1.pixelZoom), wh * Game1.pixelZoom, (int)textSize.Y),
+					sourceRectangle: new Rectangle(sourceOrigin.X, sourceOrigin.Y + wh, wh, 1),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// right
+				b.Draw(texture: Game1.mouseCursors,
+					destinationRectangle: new Rectangle((int)positionPadded.X + (int)textSize.X, (int)positionPadded.Y + (wh * Game1.pixelZoom), wh * Game1.pixelZoom, (int)textSize.Y),
+					sourceRectangle: new Rectangle(sourceOrigin.X + 28, sourceOrigin.Y + wh, wh, 1),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					effects: SpriteEffects.None,
+					layerDepth: 1f);
+				// title text
+				b.DrawString(
+					spriteFont: Game1.dialogueFont,
+					text: title,
+					position: positionPadded + new Vector2(iconSize.X * iconScale, 0) + new Vector2(wh * Game1.pixelZoom) + new Vector2(padding.X / 4, -6f * iconScale),
+					color: Game1.textColor);
+
+
+				// Draw actual popup
 				Game1.drawDialogueBox(
 					x: this.xPositionOnScreen,
 					y: this.yPositionOnScreen,
@@ -198,36 +305,40 @@ namespace RaisedGardenBeds
 					speaker: false,
 					drawOnlyBox: true);
 
+				const int paddingY = 3;
 				int x = this.xPositionOnScreen + (this.width / 2);
-				int y = this.yPositionOnScreen + IClickableMenu.spaceToClearTopBorder + 80;
+				int y = this.yPositionOnScreen;
+				int yOffset = IClickableMenu.spaceToClearTopBorder;
 				
-				foreach (KeyValuePair<string, int> nameAndIndex in NewVarieties)
+				foreach (KeyValuePair<string, int> nameAndIndex in this.NewVarieties)
 				{
 					string crafting = Game1.content.LoadString("Strings\\UI:LearnedRecipe_crafting");
+					yOffset += (int)Game1.dialogueFont.MeasureString(crafting).Y + (paddingY * Game1.pixelZoom)
+						 + ((Game1.smallestTileSize + paddingY) * 2);
+
 					string message = Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe", crafting, ModEntry.Instance.i18n.Get($"item.name.{nameAndIndex.Key}"));
-					int xOffset = (int)((Game1.smallFont.MeasureString(message).X / 2) - (Game1.smallestTileSize * Game1.pixelZoom));
+					int xOffset = -(int)((Game1.smallFont.MeasureString(message).X / 2) - (Game1.smallestTileSize * Game1.pixelZoom));
 					b.DrawString(
 						spriteFont: Game1.smallFont,
 						text: message,
 						position: new Vector2(
-							x - xOffset,
-							y + ((Game1.smallestTileSize + 3) * 2)),
+							x + xOffset,
+							y + yOffset),
 						color: Game1.textColor);
 
+					yOffset -= (Game1.smallestTileSize * Game1.pixelZoom);
 					b.Draw(
 						texture: Game1.bigCraftableSpriteSheet,
 						sourceRectangle: StardewValley.Object.getSourceRectForBigCraftable(nameAndIndex.Value),
 						position: new Vector2(
-							x - xOffset - (Game1.smallestTileSize * 1.5f * Game1.pixelZoom),
-							y - (Game1.smallestTileSize * Game1.pixelZoom)),
+							x + xOffset - (Game1.smallestTileSize * 1.5f * Game1.pixelZoom),
+							y + yOffset),
 						color: Color.White,
 						rotation: 0f,
 						origin: Vector2.Zero,
 						scale: Game1.pixelZoom,
 						effects: SpriteEffects.None,
 						layerDepth: 1f);
-					
-					y += (Game1.smallestTileSize + 1) * 2 * Game1.pixelZoom;
 				}
 				this.OkButton.draw(b);
 				
@@ -245,21 +356,21 @@ namespace RaisedGardenBeds
 			this._informationUp = false;
 		}
 
-		public static void Push(List<string> newVarieties)
+		public static void Push(List<string> variantKeys)
 		{
-			if (newVarieties == null)
+			if (variantKeys == null)
 				return;
 
-			for (int i = newVarieties.Count - 1; i >= 0; --i)
+			for (int i = variantKeys.Count - 1; i >= 0; --i)
 			{
-				if (!ModEntry.ItemDefinitions.ContainsKey(newVarieties[i]))
+				if (!ModEntry.ItemDefinitions.ContainsKey(variantKeys[i]))
 				{
-					newVarieties.RemoveAt(i);
+					variantKeys.RemoveAt(i);
 				}
 			}
-			if (newVarieties.Count > 0)
+			if (variantKeys.Count > 0)
 			{
-				Game1.endOfNightMenus.Push(new NewRecipeMenu(newVarieties: newVarieties));
+				Game1.endOfNightMenus.Push(new NewRecipeMenu(newVarieties: variantKeys));
 			}
 		}
 	}

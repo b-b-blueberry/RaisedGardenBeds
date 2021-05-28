@@ -1,10 +1,10 @@
 {
 	"Events": [
 		{
-			"Conditions": "u 28/z summer/z fall/z winter",
+			"Conditions": "w sunny/m 10000/f {0} 500",
 			"Who": "Robin",
 			"Where": "Farm",
-			"Script": "continue/64 15/farmer 64 16 2 {0} 64 18 0/skippable/pause 1500/speak {0} {1}"
+			"Script": "continue/64 15/farmer 64 16 2 {0} 64 18 0/skippable/pause 1500/speak {0} {1}/pause 500/end"
 		}
 	]
 }

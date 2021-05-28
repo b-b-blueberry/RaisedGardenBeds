@@ -35,6 +35,7 @@ namespace RaisedGardenBeds
 		/// Index of current object variant in the root keys of the common <see cref="ModEntry.ItemDefinitions"/> dictionary.
 		/// </summary>
 		public NetInt Variant = new NetInt();
+		public NetInt BreakageTimer = new NetInt();
 		/// <summary>
 		/// Name of key for the current object variant in the common <see cref="ModEntry.ItemDefinitions"/> dictionary.
 		/// </summary>
@@ -74,15 +75,16 @@ namespace RaisedGardenBeds
 		/// <summary>
 		/// Whether the object is marked as broken, preventing it from planting or growing seeds and crops.
 		/// </summary>
-		public bool IsBroken => this.CanBreak && this.MinutesUntilReady <= OutdoorPot.BreakageDefinite;
+		public bool IsBroken => this.CanBreak && this.BreakageTimer.Value <= OutdoorPot.BreakageDefinite;
 		/// <summary>
 		/// Whether the object is ready to be broken at the end of the season.
 		/// </summary>
-		public bool IsReadyToBreak => this.CanBreak && this.MinutesUntilReady <= OutdoorPot.BreakageTarget && this.MinutesUntilReady > OutdoorPot.BreakageDefinite;
+		public bool IsReadyToBreak => this.CanBreak && this.BreakageTimer.Value <= OutdoorPot.BreakageTarget && this.BreakageTimer.Value > OutdoorPot.BreakageDefinite;
 		/// <summary>
 		/// Vertical index of object sprites in the shared <see cref="OutdoorPot.Sprites"/> spritesheet.
 		/// </summary>
 		public int OffsetInSheet => this.Variant.Value * Game1.smallestTileSize * 2;
+
 		/// <summary>
 		/// Horizontal index of broken object sprite in the shared <see cref="OutdoorPot.Sprites"/> spritesheet.
 		/// </summary>
@@ -96,11 +98,11 @@ namespace RaisedGardenBeds
 		/// </summary>
 		internal const int SoilIndexInSheet = 4;
 		/// <summary>
-		/// Value for <see cref="StardewValley.Object.MinutesUntilReady"/> where the object is marked for breakage.
+		/// Value for <see cref="OutdoorPot.BreakageTimer"/> where the object is marked for breakage.
 		/// </summary>
 		internal const int BreakageTarget = 0;
 		/// <summary>
-		/// When broken, <see cref="StardewValley.Object.MinutesUntilReady"/> is set to this value.
+		/// When broken, <see cref="OutdoorPot.BreakageTimer"/> is set to this value.
 		/// </summary>
 		internal const int BreakageDefinite = -300;
 		/// <summary>
@@ -116,15 +118,15 @@ namespace RaisedGardenBeds
 		/// Common name or prefix for all garden bed objects.
 		/// </summary>
 		internal const string GenericName = "blueberry.rgb.raisedbed";
-
+		
 
 		public OutdoorPot() : this(variant: 0, tileLocation: Vector2.Zero) {}
 
-		public OutdoorPot(int variant, Vector2 tileLocation)
+		public OutdoorPot(int? variant, Vector2 tileLocation)
 		{
 			// Object ()
 			this.initNetFields();
-
+			
 			// Object (Vector2, int, bool) : Object ()
 			this.ParentSheetIndex = ModEntry.JsonAssets.GetBigCraftableId(OutdoorPot.GenericName);
 			this.TileLocation = tileLocation;
@@ -173,8 +175,11 @@ namespace RaisedGardenBeds
 			this.VariantKey.Value = OutdoorPot.GetVariantKeyFromVariantIndex(variant: this.Variant.Value);
 			this.SoilHeightAboveGround.Value = int.Parse(ModEntry.ItemDefinitions[this.VariantKey.Value]["SoilHeightAboveGround"]);
 			this.BreakageStart.Value = int.Parse(ModEntry.ItemDefinitions[this.VariantKey.Value]["DaysToBreak"]);
-			this.MinutesUntilReady = this.BreakageStart.Value;
 			this.DisplayName = ModEntry.Instance.i18n.Get($"item.name.{this.VariantKey.Value}");
+			if (variant != null)
+			{
+				this.BreakageTimer.Value = this.BreakageStart.Value;
+			}
 		}
 
 		protected override void initNetFields()
@@ -209,17 +214,22 @@ namespace RaisedGardenBeds
 			return OutdoorPot.GetVariantIndexFromName(name) + ModEntry.JsonAssets.GetBigCraftableId(OutdoorPot.GenericName);
 		}
 
-		public static string GetDisplayNameFromVariantKey(string variantKey)
-		{
-			return OutdoorPot.GetDisplayNameFromName($"item.name.{variantKey}");
-		}
-
 		public static string GetDisplayNameFromName(string name)
 		{
 			return ModEntry.Instance.i18n.Get($"item.name.{OutdoorPot.GetVariantKeyFromName(name)}");
 		}
 
-		public static string GetItemNameFromCraftingRecipeName(string recipeName)
+		public static string GetDisplayNameFromVariantKey(string variantKey)
+		{
+			return OutdoorPot.GetDisplayNameFromName($"item.name.{variantKey}");
+		}
+
+		public static string GetNameFromVariantKey(string variantKey)
+		{
+			return OutdoorPot.GenericName + "." + variantKey;
+		}
+
+		public static string GetDisplayNameFromRecipeName(string recipeName)
 		{
 			return OutdoorPot.GetDisplayNameFromName(recipeName.Split('.').Last());
 		}
@@ -253,50 +263,60 @@ namespace RaisedGardenBeds
 
 		public override bool performToolAction(Tool t, GameLocation location)
 		{
+			bool isHeavy = t.isHeavyHitter();
+
 			if (this.IsBroken)
 			{
+				if (t is StardewValley.Tools.MeleeWeapon)
+				{
+					base.performToolAction(t, location);
+					return false;
+				}
+
 				// Broken objects will not return to the inventory when hit, but will destroy and provide a small refund of the primary resource
 				location.playSound("axchop");
 
-				// visual debris
-				Game1.createRadialDebris(
-					location: location, debrisType: 12,
-					xTile: (int)this.TileLocation.X, yTile: (int)this.TileLocation.Y,
-					numberOfChunks: Game1.random.Next(4, 10), resource: false);
-				Multiplayer multiplayer = ModEntry.Instance.Helper.Reflection.GetField<Multiplayer>(typeof(Game1), "multiplayer").GetValue();
-				multiplayer.broadcastSprites(
-					location: location,
-					sprites: new TemporaryAnimatedSprite(
-						rowInAnimationTexture: 12,
-						position: new Vector2(this.TileLocation.X * Game1.tileSize, this.TileLocation.Y * Game1.tileSize),
-						color: Color.White,
-						animationLength: 8,
-						flipped: Game1.random.NextDouble() < 0.5,
-						animationInterval: 50));
-
-				// refund debris
-				List<int> recipe = Game1.content.Load
-					<Dictionary<string, string>>
-					(System.IO.Path.Combine("Data", "CraftingRecipes"))
-					[this.Name].Split('/')[0].Split(' ').ToList().ConvertAll(int.Parse);
-				int refundItem = recipe[0];
-				int refundQuantity = (int)(recipe[1] * OutdoorPot.RefundRatio);
-				if (refundQuantity > 0)
-				{
-					Game1.createRadialDebris(
-						location: location,
-						debrisType: refundItem,
-						xTile: (int)this.TileLocation.X - 1,
-						yTile: (int)this.TileLocation.Y - 1,
-						numberOfChunks: refundQuantity,
-						resource: false,
-						groundLevel: -1,
-						item: true);
-				}
-
 				// Remove object without adjusting neighbours, as neighbours have already adjusted to ignore the broken object
-				if (this.TossHeldItem())
+				if (this.TossHeldItem(pop: true))
 				{
+					// visual debris
+					Game1.createRadialDebris(
+						location: location, debrisType: 12,
+						xTile: (int)this.TileLocation.X, yTile: (int)this.TileLocation.Y,
+						numberOfChunks: Game1.random.Next(4, 10), resource: false);
+					Multiplayer multiplayer = ModEntry.Instance.Helper.Reflection.GetField<Multiplayer>(typeof(Game1), "multiplayer").GetValue();
+					multiplayer.broadcastSprites(
+						location: location,
+						sprites: new TemporaryAnimatedSprite(
+							rowInAnimationTexture: 12,
+							position: new Vector2(this.TileLocation.X * Game1.tileSize, this.TileLocation.Y * Game1.tileSize),
+							color: Color.White,
+							animationLength: 8,
+							flipped: Game1.random.NextDouble() < 0.5,
+							animationInterval: 50));
+
+					// refund debris
+					string recipeRaw = Game1.content.Load
+						<Dictionary<string, string>>
+						(System.IO.Path.Combine("Data", "CraftingRecipes"))
+						[OutdoorPot.GetNameFromVariantKey(OutdoorPot.GetVariantKeyFromVariantIndex(variant: this.Variant.Value))];
+					string[] recipeSplit = recipeRaw.Split('/')[0].Split(' ');
+					List<int> recipe = recipeSplit.ToList().ConvertAll(int.Parse);
+					int refundItem = recipe[0];
+					int refundQuantity = (int)(recipe[1] * OutdoorPot.RefundRatio);
+					if (refundQuantity > 0)
+					{
+						Game1.createRadialDebris(
+							location: location,
+							debrisType: refundItem,
+							xTile: (int)this.TileLocation.X - 1,
+							yTile: (int)this.TileLocation.Y - 1,
+							numberOfChunks: refundQuantity,
+							resource: false,
+							groundLevel: -1,
+							item: true);
+					}
+
 					location.Objects.Remove(this.TileLocation);
 				}
 			}
@@ -342,7 +362,11 @@ namespace RaisedGardenBeds
 				// Accept objects if not holding any seeds or crops
 				if (!probe)
 				{
-					if (this.TossHeldItem())
+					if (this.heldObject.Value != null && this.heldObject.Value.ParentSheetIndex == dropInItem.ParentSheetIndex)
+					{
+						return false;
+					}
+					else if (this.TossHeldItem())
 					{
 						this.HoldItem(dropInItem);
 					}
@@ -463,7 +487,7 @@ namespace RaisedGardenBeds
 					// If this object is broken, its crop shouldn't be allowed to grow
 					this.hoeDirt.Value.crop?.ResetPhaseDays();
 				}
-				--this.MinutesUntilReady;
+				--this.BreakageTimer.Value;
 			}
 			else if (this.IsBroken)
 			{
@@ -499,6 +523,15 @@ namespace RaisedGardenBeds
 			base.updateWhenCurrentLocation(time, environment);
 			this.heldObject.Value?.updateWhenCurrentLocation(time, environment);
 		}
+
+		public override bool minutesElapsed(int minutes, GameLocation environment)
+		{
+			return false;
+		}
+
+		public override void addWorkingAnimation(GameLocation environment) {}
+
+		public override void onReadyForHarvest(GameLocation environment) {}
 
 		public override void drawWhenHeld(SpriteBatch spriteBatch, Vector2 objectPosition, Farmer f)
 		{
@@ -551,12 +584,6 @@ namespace RaisedGardenBeds
 
 		public override void draw(SpriteBatch spriteBatch, int x, int y, float alpha = 1)
 		{
-			// TODO: TEST: Remove debug lines after testing crafting recipe conditions and unlocks
-			var playerRecipes = Game1.player.craftingRecipes;
-			var recipeRecipes = CraftingRecipe.craftingRecipes;
-			var bigCraftables = Game1.bigCraftablesInformation;
-			var menu = Game1.activeClickableMenu is StardewValley.Menus.GameMenu gm ? gm.GetCurrentPage() : null;
-
 			Vector2 position = Game1.GlobalToLocal(Game1.viewport, new Vector2(x * Game1.tileSize, (y * Game1.tileSize) - Game1.tileSize));
 			Rectangle destination = new Rectangle(
 				(int)position.X + ((this.shakeTimer > 0) ? Game1.random.Next(-1, 2) : 0),
@@ -747,18 +774,33 @@ namespace RaisedGardenBeds
 
 		public bool TossHeldItem(bool pop = false)
 		{
-			if (this.heldObject.Value == null)
+			bool tossed = false;
+
+			// Toss crops
+			if (this.hoeDirt.Value.crop != null)
 			{
-				return true;
+				if (pop && this.hoeDirt.Value.crop.harvest(xTile: (int)this.TileLocation.X, yTile: (int)this.TileLocation.Y, soil: this.hoeDirt.Value))
+				{
+					tossed = true;
+				}
 			}
-			if (pop && Game1.createItemDebris(item: heldObject.Value, origin: this.TileLocation * Game1.tileSize, direction: -1) != null)
+			
+			// Toss held objects
+			if (this.heldObject.Value != null)
 			{
-				this.heldObject.Value.TileLocation = Vector2.Zero;
-				this.heldObject.Value = null;
-				return true;
+				if (pop && Game1.createItemDebris(item: heldObject.Value, origin: this.TileLocation * Game1.tileSize, direction: -1) != null)
+				{
+					this.heldObject.Value.TileLocation = Vector2.Zero;
+					this.heldObject.Value = null;
+					tossed = true;
+				}
+				else
+				{
+					this.heldObject.Value.shakeTimer = OutdoorPot.ShakeDuration;
+				}
 			}
-			this.heldObject.Value.shakeTimer = OutdoorPot.ShakeDuration;
-			return false;
+
+			return tossed || (this.hoeDirt.Value.crop == null && this.heldObject.Value == null);
 		}
 
 		public void Water()
@@ -769,7 +811,7 @@ namespace RaisedGardenBeds
 
 		public void Unbreak(GameLocation location = null, bool adjust = false)
 		{
-			this.MinutesUntilReady = this.BreakageStart.Value;
+			this.BreakageTimer.Value = this.BreakageStart.Value;
 			if (adjust)
 			{
 				OutdoorPot.AdjustWithNeighbours(location: location, tileLocation: this.TileLocation);
@@ -794,7 +836,7 @@ namespace RaisedGardenBeds
 			if (specificLocation != null)
 				breakAllInLocation(specificLocation);
 			else
-				foreach (GameLocation location in Game1.locations)
+				foreach (GameLocation location in OutdoorPot.GetValidLocations())
 					breakAllInLocation(location);
 		}
 
@@ -804,7 +846,7 @@ namespace RaisedGardenBeds
 		/// <param name="adjust">Whether to call <see cref="OutdoorPot.AdjustAll(GameLocation)"/> after breaking.</param>
 		public void Break(GameLocation location, bool adjust)
 		{
-			this.MinutesUntilReady = OutdoorPot.BreakageDefinite;
+			this.BreakageTimer.Value = OutdoorPot.BreakageDefinite;
 			if (adjust)
 			{
 				OutdoorPot.AdjustWithNeighbours(location: location, tileLocation: this.TileLocation);
@@ -846,7 +888,7 @@ namespace RaisedGardenBeds
 			if (specificLocation != null)
 				adjustAllInLocation(specificLocation);
 			else
-				foreach (GameLocation location in Game1.locations)
+				foreach (GameLocation location in OutdoorPot.GetValidLocations())
 					adjustAllInLocation(location);
 		}
 
@@ -879,7 +921,9 @@ namespace RaisedGardenBeds
 
 		public static void AdjustWithNeighbours(GameLocation location, Vector2 tileLocation, int radius = 1)
 		{
-			if (location == null || radius < 1)
+			if (location == null)
+				location = Game1.currentLocation;
+			if (radius < 1)
 				return;
 
 			Point origin = Utility.Vector2ToPoint(tileLocation);
@@ -922,6 +966,18 @@ namespace RaisedGardenBeds
 				&& item is StardewValley.Object o && (
 					//o.Name.EndsWith("arecrow") || 
 					(ModEntry.Config.SprinklersEnabled && o.IsSprinkler()));
+		}
+
+		public static List<GameLocation> GetValidLocations()
+		{
+			var locations = new List<GameLocation> { Game1.getFarm() };
+			if (ModEntry.Config.CanBePlacedInFarmHouse)
+				locations.AddRange(new[] { Game1.getLocationFromName("FarmHouse"), Game1.getLocationFromName("IslandFarmHouse") });
+			if (ModEntry.Config.CanBePlacedInGreenHouse)
+				locations.Add(Game1.getLocationFromName("Greenhouse"));
+			if (ModEntry.Config.CanBePlacedInBuildings)
+				locations.AddRange(Game1.getFarm().buildings.Where(b => b.indoors.Value != null).Select(b => b.indoors.Value));
+			return locations;
 		}
 
 		public static void ReloadSprites()

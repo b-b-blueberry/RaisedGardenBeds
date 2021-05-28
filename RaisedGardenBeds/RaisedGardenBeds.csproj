@@ -15,6 +15,13 @@
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="3.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="SpaceCore">
+      <HintPath>$(GamePath)\Mods\SpaceCore\SpaceCore.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  
   <ProjectExtensions><VisualStudio><UserProperties manifest_1json__JsonSchema="https://smapi.io/schemas/manifest.json" /></VisualStudio></ProjectExtensions>
 
 </Project>

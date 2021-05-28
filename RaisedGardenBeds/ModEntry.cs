@@ -2,18 +2,12 @@
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 namespace RaisedGardenBeds
 {
-	// TODO: TEST: Garden bed breakage at end of season under natural conditions
-	// TODO: TEST: Garden bed unlock conditions for each variant
-	// TODO: TEST: Root event condition and script
-	// TODO: TEST: Gamepad interactions: Crafting, hoeDirt.crop, heldObject, tool action, dropin action, replacing broken
-
 	public class ModEntry : Mod
 	{
 		// common
@@ -24,13 +18,13 @@ namespace RaisedGardenBeds
 
 		// definitions
 		internal static Dictionary<string, Dictionary<string, string>> ItemDefinitions = null;
-		internal static Dictionary<string, string> EventData = null;
-		internal static List<Dictionary<string, string>> Events = null;
+		internal static List<Dictionary<string, string>> EventData = null;
 
 		// others
 		internal const string CommandPrefix = "rgb";
 		internal static int ModUpdateKey = -1;
 		internal static int EventRoot => ModUpdateKey * 10000;
+		internal const string EndOfNightState = "blueberry.rgb.endofnightmenu";
 
 
 		public override void Entry(IModHelper helper)
@@ -49,28 +43,37 @@ namespace RaisedGardenBeds
 
 		private void GameLoop_SaveLoaded(object sender, SaveLoadedEventArgs e)
 		{
+			Game1.player.team.endOfNightStatus.AddSpriteDefinition(EndOfNightState, "LooseSprites\\PlayerStatusList", 48, 0, 16, 16);
+			Game1.content.Load<Dictionary<string, object>>(AssetManager.GameContentEventDataPath);
 			if (Context.IsMainPlayer)
 			{
 				// Reinitialise objects to recalculate XmlIgnore values
 				OutdoorPot.AdjustAll(reinitialise: true);
 			}
+			else
+			{
+				Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
+				OutdoorPot.AdjustAllOnNextTick();
+			}
 		}
 
 		private void GameLoop_DayStarted(object sender, DayStartedEventArgs e)
 		{
+
 			// Invalidate sprites at the start of each day in case patches target the asset
 			OutdoorPot.ReloadSprites();
+
+			// Add always-available recipes to player list without any unique fanfare
+			AddDefaultRecipes();
 		}
 
 		private void GameLoop_DayEnding(object sender, DayEndingEventArgs e)
 		{
+			// Break ready objects at the start of each season
 			if (Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == 28)
 			{
 				OutdoorPot.BreakAll();
 			}
-
-			// Add any newly-available object recipes to player list
-			NewRecipeMenu.Push(GetNewRecipes());
 		}
 
 		private void Event_LoadLate(object sender, OneSecondUpdateTickedEventArgs e)
@@ -140,32 +143,57 @@ namespace RaisedGardenBeds
 			Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
 			Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 
+			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
+
 			Helper.ConsoleCommands.Add(name: CommandPrefix + "give", "Drop some raised bed items.", Cmd_Give);
 			Helper.ConsoleCommands.Add(name: CommandPrefix + "prebreak", "Mark all raised beds as ready to break.", Cmd_Prebreak);
 			Helper.ConsoleCommands.Add(name: CommandPrefix + "checkdirt", "Check whether garden bed under cursor is watered.", Cmd_CheckDirt);
 		}
 
-		public static List<string> GetNewRecipes()
+		private void SpaceEvents_ShowNightEndMenus(object sender, SpaceCore.Events.EventArgsShowNightEndMenus e)
+		{
+			// Add and show any newly-available object recipes to player list at the end of day screens
+			NewRecipeMenu.Push(AddNewAvailableRecipes());
+		}
+
+		public static void AddDefaultRecipes()
+		{
+			for (int i = 0; i < ItemDefinitions.Count; ++i)
+			{
+				string varietyName = ItemDefinitions.Keys.ElementAt(i);
+				string craftingRecipeName = OutdoorPot.GenericName + "." + varietyName;
+
+				if (!Game1.player.craftingRecipes.ContainsKey(craftingRecipeName) // Recipe not yet known
+					&& (Config.RecipesAlwaysAvailable								// All recipes globally available
+						|| bool.Parse(ItemDefinitions[varietyName]["RecipeIsDefault"]) // Recipe  available by default
+					|| (Game1.player.eventsSeen.Contains(EventRoot) && string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])))) // Recipe has no conditions
+				{
+					Game1.player.craftingRecipes.Add(craftingRecipeName, 0);
+				}
+			}
+		}
+
+		public static List<string> AddNewAvailableRecipes()
 		{
 			List<string> newVarieties = new List<string>();
 			for (int i = 0; i < ItemDefinitions.Count; ++i)
 			{
 				string varietyName = ItemDefinitions.Keys.ElementAt(i);
-				string fullVarietyName = OutdoorPot.GenericName + "." + varietyName;
+				string itemName = OutdoorPot.GetNameFromVariantKey(varietyName);
+
+				if (Game1.player.craftingRecipes.ContainsKey(itemName)
+					|| string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])
+					|| !Game1.player.eventsSeen.Contains(EventRoot)
+					)
+					continue;
+
 				int eventID = EventRoot + i;
-				int precondition = !Game1.player.craftingRecipes.ContainsKey(fullVarietyName)
-					&& (Config.RecipesAlwaysAvailable
-						|| bool.Parse(ItemDefinitions[varietyName]["RecipeIsDefault"])
-						|| (string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])
-							&& !Game1.player.eventsSeen.Contains(EventRoot)))
-					? 1
-					: Game1.getFarm().checkEventPrecondition(
-						eventID.ToString() + "/" + (string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])
-						? "null" : ItemDefinitions[varietyName]["RecipeConditions"]));
+				string eventKey = eventID.ToString() + "/" + ItemDefinitions[varietyName]["RecipeConditions"];
+				int precondition = Game1.getFarm().checkEventPrecondition(eventKey);
 				if (precondition != -1)
 				{
-					newVarieties.Add(fullVarietyName);
-					Game1.player.craftingRecipes.Add(fullVarietyName, 0);
+					newVarieties.Add(varietyName);
+					Game1.player.craftingRecipes.Add(itemName, 0);
 				}
 			}
 			return newVarieties;
@@ -195,19 +223,26 @@ namespace RaisedGardenBeds
 				Log.D("Breakage is disabled in mod config file!");
 				return;
 			}
-			foreach (OutdoorPot o in Game1.getFarm().Objects.Values.OfType<OutdoorPot>().Where(o => o.MinutesUntilReady > 0))
+			foreach (OutdoorPot o in Game1.currentLocation.Objects.Values.OfType<OutdoorPot>().Where(o => o.BreakageTimer.Value > 0))
 			{
-				o.Unbreak();
+				o.BreakageTimer.Value = 1;
 			}
 		}
 
-		private void Cmd_CheckDirt(string arg1, string[] arg2)
+		private static void Cmd_CheckDirt(string arg1, string[] arg2)
 		{
 			Vector2 tile = Game1.currentCursorTile;
 			Game1.currentLocation.Objects.TryGetValue(tile, out StardewValley.Object o);
 			if (o != null && o is OutdoorPot op)
 			{
-				Log.D($"RGB.OP.HD at {tile} == {op.hoeDirt.Value.state.Value} (sprite: {op.showNextIndex.Value})");
+				Log.D($"RGB.OP.HD at {tile} == {op.hoeDirt.Value.state.Value} (sprite: {op.showNextIndex.Value})"
+					+ $"\nBreakage: {op.BreakageTimer.Value} / {op.BreakageStart.Value}");
+				if (false)
+				{
+					int breakTo = 1;
+					Log.D($"Set breakage timer to {breakTo}.");
+					op.BreakageTimer.Value = breakTo;
+				}
 				return;
 			}
 

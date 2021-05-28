@@ -16,10 +16,12 @@ namespace RaisedGardenBeds
 
 		internal const string AssetPrefix = "blueberry.rgb.Assets";
 
+		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(AssetPrefix, "EndOfNightSprites");
 		internal static readonly string GameContentItemDefinitionsPath = Path.Combine(AssetPrefix, "ItemDefinitions");
 		internal static readonly string GameContentEventDataPath = Path.Combine(AssetPrefix, "EventData");
 		internal static readonly string GameContentSpritesPath = Path.Combine(AssetPrefix, "Sprites");
 
+		internal static readonly string LocalEndOfNightSpritesPath = Path.Combine("assets", "endOfNightSprites.png");
 		internal static readonly string LocalItemDefinitionsPath = Path.Combine("assets", "itemDefinitions.json");
 		internal static readonly string LocalEventDataPath = Path.Combine("assets", "eventData.json");
 		internal static readonly string LocalSpritesPath = Path.Combine("assets", "sprites.png");
@@ -34,35 +36,37 @@ namespace RaisedGardenBeds
 
 		public bool CanLoad<T>(IAssetInfo asset)
 		{
-			return asset.AssetNameEquals(GameContentSpritesPath)
+			return asset.AssetNameEquals(GameContentEndOfNightSpritesPath)
 				|| asset.AssetNameEquals(GameContentItemDefinitionsPath)
-				|| asset.AssetNameEquals(GameContentEventDataPath);
+				|| asset.AssetNameEquals(GameContentEventDataPath)
+				|| asset.AssetNameEquals(GameContentSpritesPath);
 		}
 
 		public T Load<T>(IAssetInfo asset)
 		{
 			if (asset.AssetNameEquals(GameContentSpritesPath))
 				return (T)(object)_helper.Content.Load<Texture2D>(LocalSpritesPath);
+			if (asset.AssetNameEquals(GameContentEndOfNightSpritesPath))
+				return (T)(object)_helper.Content.Load<Texture2D>(LocalEndOfNightSpritesPath);
+			if (asset.AssetNameEquals(GameContentEventDataPath))
+				return (T)(object)_helper.Content.Load<Dictionary<string, object>>(LocalEventDataPath);
 			if (asset.AssetNameEquals(GameContentItemDefinitionsPath))
 				return (T)(object)_helper.Content.Load<Dictionary<string, Dictionary<string, string>>>(LocalItemDefinitionsPath);
-			if (asset.AssetNameEquals(GameContentEventDataPath))
-				return (T)(object)_helper.Content.Load<Dictionary<string, string>>(LocalEventDataPath);
 			return (T)(object)null;
 		}
 
 		public bool CanEdit<T>(IAssetInfo asset)
 		{
-			bool isReady = OutdoorPot.Sprites != null && ModEntry.JsonAssets != null && !(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu);
-			bool isEventAsset = asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
-						&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
-						&& ModEntry.Events != null && ModEntry.Events.Any(e => e["Where"] == where);
-			return isReady
+			bool isCustomContentReady = OutdoorPot.Sprites != null && ModEntry.JsonAssets != null && !(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu);
+			return isCustomContentReady
 				&& (asset.AssetNameEquals(GameContentItemDefinitionsPath)
 					|| asset.AssetNameEquals(GameContentEventDataPath)
 					|| asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables"))
 					|| asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation"))
 					|| asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes"))
-					|| isEventAsset);
+					|| (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
+						&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
+						&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where)));
 		}
 
 		public void Edit<T>(IAssetData asset)
@@ -86,9 +90,9 @@ namespace RaisedGardenBeds
 			}
 			if (asset.AssetNameEquals(GameContentEventDataPath))
 			{
-				var events = JsonConvert.DeserializeObject(asset.AsDictionary<string, string>().Data["Events"])
-					as List<Dictionary<string, string>>;
-				ModEntry.Events = events;
+				var events = ((Newtonsoft.Json.Linq.JArray)asset.AsDictionary<string, object>().Data["Events"])
+					.ToObject<List<Dictionary<string, string>>>();
+				ModEntry.EventData = events;
 
 				return;
 			}
@@ -97,7 +101,7 @@ namespace RaisedGardenBeds
 			int id = ModEntry.JsonAssets == null ? -1 : ModEntry.JsonAssets.GetBigCraftableId(OutdoorPot.GenericName);
 			if (id < 0)
 				return;
-			if (asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables")))
+			if (asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables")) && Game1.bigCraftableSpriteSheet != null)
 			{
 				// Patch basic object sprites to game craftables sheet for all variants
 				for (int variant = 0; variant < ModEntry.ItemDefinitions.Count; ++variant)
@@ -157,25 +161,30 @@ namespace RaisedGardenBeds
 						idAndFields.Value["RecipeItems"],			// Crafting ingredients
 						fields[1],									// Unused field
 						fields[2],									// Crafted item ID and quantity
-						idAndFields.Value["RecipeIsDefault"],		// Recipe always available
-						idAndFields.Value["RecipeConditions"] ?? "null",	// Recipe availability conditions
+						"true",										// Recipe is bigCraftable
+						"blue berry",								// Recipe conditions
 						i18n.Get("item.name." + idAndFields.Key)	// Recipe display name
 					};
 					data[OutdoorPot.GenericName + "." + idAndFields.Key] = string.Join("/", newFields);
 				}
 				return;
 			}
-			if ((asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
-				&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
-				&& ModEntry.Events != null
-				&& ModEntry.Events.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData))
+			if (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
+				&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where)
 			{
-				string key = ModEntry.EventRoot + ModEntry.Events.IndexOf(eventData) + "/" + eventData["Conditions"];
-				string script = string.Format(
-					format: eventData["Script"],
-					eventData["Who"],
-					i18n.Get("event.0.dialogue"));
-				asset.AsDictionary<string, string>().Data[key] = script;
+				if (ModEntry.EventData != null
+					&& ModEntry.EventData.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
+				{
+					eventData["Conditions"] = string.Format(
+						format: eventData["Conditions"],
+						eventData["Who"]);
+					string key = ModEntry.EventRoot + ModEntry.EventData.IndexOf(eventData) + "/" + eventData["Conditions"];
+					string script = string.Format(
+						format: eventData["Script"],
+						eventData["Who"],
+						i18n.Get("event.0.dialogue"));
+					asset.AsDictionary<string, string>().Data[key] = script;
+				}
 
 				return;
 			}

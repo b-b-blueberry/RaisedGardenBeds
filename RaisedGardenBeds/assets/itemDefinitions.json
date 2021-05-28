@@ -1,21 +1,21 @@
 {
 	"wood": {
 		"RecipeItems": "388 20", // Wood
-		"RecipeIsDefault": true,
+		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 44,
 		"SoilHeightAboveGround": 8
 	},
 	"stone": {
 		"RecipeItems": "390 20", // Stone
-		"RecipeIsDefault": true,
+		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 60,
 		"SoilHeightAboveGround": 8
 	},
 	"clay": {
 		"RecipeItems": "330 10", // Clay
-		"RecipeIsDefault": true,
+		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 60,
 		"SoilHeightAboveGround": 8
@@ -23,14 +23,14 @@
 	"hardwood": {
 		"RecipeItems": "709 5", // Hardwood
 		"RecipeIsDefault": false,
-		"RecipeConditions": null,
+		"RecipeConditions": "y 2",
 		"DaysToBreak": 84,
 		"SoilHeightAboveGround": 10
 	},
 	"driftwood": {
 		"RecipeItems": "169 3", // Driftwood
 		"RecipeIsDefault": false,
-		"RecipeConditions": null,
+		"RecipeConditions": "n beachBridgeFixed",
 		"DaysToBreak": 32,
 		"SoilHeightAboveGround": 6
 	},
