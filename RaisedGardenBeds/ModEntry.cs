@@ -29,6 +29,8 @@ namespace RaisedGardenBeds
 
 		public override void Entry(IModHelper helper)
 		{
+			Log.W($"Loading {ModManifest.UniqueID} pre-release candidate: {ModManifest.Version}");
+
 			Instance = this;
 			Config = helper.ReadConfig<Config>();
 			ModUpdateKey = int.Parse(ModManifest.UpdateKeys.First().Split(':')[1]);
