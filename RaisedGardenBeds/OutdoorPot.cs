@@ -185,7 +185,7 @@ namespace RaisedGardenBeds
 		protected override void initNetFields()
 		{
 			base.initNetFields();
-			this.NetFields.AddFields(this.Variant, this.VariantKey, this.SoilHeightAboveGround, this.BreakageStart);
+			this.NetFields.AddFields(this.Variant, this.VariantKey, this.SoilHeightAboveGround, this.BreakageStart, this.BreakageTimer, this.Neighbours);
 		}
 
 		public static string GetVariantKeyFromParentSheetIndex(int index)
@@ -216,7 +216,8 @@ namespace RaisedGardenBeds
 
 		public static string GetDisplayNameFromName(string name)
 		{
-			return ModEntry.Instance.i18n.Get($"item.name.{OutdoorPot.GetVariantKeyFromName(name)}");
+			StardewModdingAPI.Translation translation = ModEntry.Instance.i18n.Get($"item.name.{OutdoorPot.GetVariantKeyFromName(name)}");
+			return translation.HasValue() ? translation.ToString() : ModEntry.Instance.i18n.Get("item.name");
 		}
 
 		public static string GetDisplayNameFromVariantKey(string variantKey)
@@ -370,6 +371,10 @@ namespace RaisedGardenBeds
 					{
 						this.HoldItem(dropInItem);
 					}
+					else
+					{
+						return false;
+					}
 				}
 				return true;
 			}
@@ -384,7 +389,7 @@ namespace RaisedGardenBeds
 			
 			bool noTiles = l.isTileLocationTotallyClearAndPlaceableIgnoreFloors(tile);
 			bool noObjects = !l.Objects.ContainsKey(tile);
-			bool noCrops = (!l.terrainFeatures.ContainsKey(tile) || (l.terrainFeatures[tile] is HoeDirt hoeDirt && hoeDirt.crop == null));
+			bool noCrops = (!l.terrainFeatures.ContainsKey(tile) || l.terrainFeatures[tile] is Flooring || (l.terrainFeatures[tile] is HoeDirt hoeDirt && hoeDirt.crop == null));
 			bool noFoliage = l.getLargeTerrainFeatureAt((int)tile.X, (int)tile.Y) == null;
 			bool noStumpsAndBoulders = l.resourceClumps.All(r => !r.occupiesTile((int)tile.X, (int)tile.Y));
 

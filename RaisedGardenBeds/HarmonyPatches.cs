@@ -85,12 +85,14 @@ namespace RaisedGardenBeds
 		{
 			try
 			{
-				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op
-					&& OutdoorPot.IsItemPlantable(item) && op.CanPlantHere(item) && op.IsOpenForPlacement())
+				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 				{
-					return true;
+					if (OutdoorPot.IsItemPlantable(item) && op.CanPlantHere(item) && op.IsOpenForPlacement())
+					{
+						return true;
+					}
+					return false;
 				}
-				return false;
 			}
 			catch (Exception e)
 			{

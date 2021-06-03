@@ -92,6 +92,18 @@ namespace RaisedGardenBeds
 			{
 				var events = ((Newtonsoft.Json.Linq.JArray)asset.AsDictionary<string, object>().Data["Events"])
 					.ToObject<List<Dictionary<string, string>>>();
+
+				// Root event tokenisation
+				events[0]["Conditions"] = string.Format(
+					format: events[0]["Conditions"],
+					events[0]["Who"]);
+				events[0]["Script"] = string.Format(
+					format: events[0]["Script"],
+					events[0]["Who"],
+					i18n.Get("event.0.dialogue.1"),
+					i18n.Get("event.0.dialogue.2"),
+					i18n.Get("event.0.dialogue.3"));
+
 				ModEntry.EventData = events;
 
 				return;
@@ -140,12 +152,14 @@ namespace RaisedGardenBeds
 					fields[8] = i18n.Get("item.name." + varietyName);
 					data[id + i] = string.Join("/", fields);
 				}
-
+				
 				// Patch object display name and description from localisations file
 				fields = data[id].Split('/');
 				fields[4] = i18n.Get("item.description" + (ModEntry.Config.CanBePlacedInBuildings ? ".indoors" : ""));
 				fields[8] = i18n.Get("item.name");
 				data[id] = string.Join("/", fields);
+
+				// Don't remove the generic craftable from data lookup, since it's used later for crafting recipes and defaults
 
 				return;
 			}
@@ -167,6 +181,9 @@ namespace RaisedGardenBeds
 					};
 					data[OutdoorPot.GenericName + "." + idAndFields.Key] = string.Join("/", newFields);
 				}
+
+				// Remove generic crafting recipe to prevent it from appearing in lookups
+				data.Remove(OutdoorPot.GenericName);
 				return;
 			}
 			if (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
@@ -175,15 +192,8 @@ namespace RaisedGardenBeds
 				if (ModEntry.EventData != null
 					&& ModEntry.EventData.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
 				{
-					eventData["Conditions"] = string.Format(
-						format: eventData["Conditions"],
-						eventData["Who"]);
 					string key = ModEntry.EventRoot + ModEntry.EventData.IndexOf(eventData) + "/" + eventData["Conditions"];
-					string script = string.Format(
-						format: eventData["Script"],
-						eventData["Who"],
-						i18n.Get("event.0.dialogue"));
-					asset.AsDictionary<string, string>().Data[key] = script;
+					asset.AsDictionary<string, string>().Data[key] = eventData["Script"];
 				}
 
 				return;

@@ -29,7 +29,7 @@ namespace RaisedGardenBeds
 			Game1.player.team.endOfNightStatus.UpdateState(ModEntry.EndOfNightState);
 			this.NewVarieties = newVarieties.ToDictionary(variety => variety, variety => OutdoorPot.GetParentSheetIndexFromName(variety));
 			this.width = (int)Dimensions.X;
-			this.height = ((int)Dimensions.Y / 2) + (this.NewVarieties.Count * Game1.smallestTileSize * 2 * Game1.pixelZoom);
+			this.height = ((int)Dimensions.Y / 2) + (this.NewVarieties.Count * Game1.smallestTileSize * 3 / 2 * Game1.pixelZoom);
 			this.OkButton = new ClickableTextureComponent(
 				bounds: Rectangle.Empty,
 				texture: Game1.mouseCursors,
@@ -57,11 +57,13 @@ namespace RaisedGardenBeds
 		{
 			this.xPositionOnScreen = (Game1.uiViewport.Width / 2) - (this.width / 2);
 			this.yPositionOnScreen = (Game1.uiViewport.Height / 2) - (this.height / 2);
-			this.OkButton.bounds = new Rectangle(
+			this.OkButton.bounds.Width = this.OkButton.bounds.Height = 64;
+			this.OkButton.bounds.X = Math.Min(
 				this.xPositionOnScreen + this.width + 4,
+				Game1.uiViewport.Width - this.OkButton.bounds.Width - 4);
+			this.OkButton.bounds.Y = Math.Min(
 				this.yPositionOnScreen + this.height - 64 - IClickableMenu.borderWidth,
-				64,
-				64);
+				Game1.uiViewport.Height - this.OkButton.bounds.Height - 4);
 		}
 
 		public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -179,7 +181,7 @@ namespace RaisedGardenBeds
 				// Draw popup header
 				const int wh = 16;
 				Vector2 padding = new Vector2(22, -8) * Game1.pixelZoom;
-				string title = Game1.content.LoadString("Strings\\StringsFromCSFiles:Object.cs.13074", "");
+				string title = "New blueprints";
 				const float iconScale = 3f;
 				Vector2 iconSize = new Vector2(26, 20);
 				Vector2 textSize = Game1.dialogueFont.MeasureString(title);
@@ -191,7 +193,8 @@ namespace RaisedGardenBeds
 					this.yPositionOnScreen - textSize.Y - (wh * Game1.pixelZoom / 2) - (2 * Game1.pixelZoom));
 				Point sourceOrigin = new Point(260, 310);
 				// background
-				b.Draw(texture: Game1.mouseCursors,
+				b.Draw(
+					texture: Game1.mouseCursors,
 					destinationRectangle: new Rectangle(
 						(int)(positionPadded.X + (wh * Game1.pixelZoom / 2)),
 						(int)(positionPadded.Y + (wh * Game1.pixelZoom / 2)),
@@ -339,6 +342,7 @@ namespace RaisedGardenBeds
 						scale: Game1.pixelZoom,
 						effects: SpriteEffects.None,
 						layerDepth: 1f);
+					yOffset += (Game1.smallestTileSize * Game1.pixelZoom);
 				}
 				this.OkButton.draw(b);
 				

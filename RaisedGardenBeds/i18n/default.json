@@ -1,6 +1,5 @@
 ﻿{
 	"item.name": "Garden Bed",
-	"item.name.": "Garden Bed",
 	"item.name.wood": "Wood Garden Bed",
 	"item.name.hardwood": "Hardwood Garden Bed",
 	"item.name.stone": "Stone Garden Bed",
@@ -14,8 +13,8 @@
 	"item.name.beach": "Beach Garden Bed",
 	"item.name.bone": "Crypt Garden Bed",
 
-	"item.description": "Allows for planting crops on unsuitable ground. Can only be placed outdoors.",
-	"item.description.indoors": "Allows for planting crops on unsuitable ground.",
+	"item.description": "Allows for planting seasonal crops on unsuitable ground. Can only be placed outdoors.",
+	"item.description.indoors": "Allows for planting seasonal crops on unsuitable ground.",
 
 	"config.raisedbedsmaybreakwithage.name": "Garden beds break with age",
 	"config.raisedbedsmaybreakwithage.description": "Garden beds will deteriorate at the start of each new season if enabled.\nThe lifespan of each variety of bed differs,\nwith more expensive varieties lasting longer!\n\nMulti-season crops growing in garden beds will survive if their bed is broken,\nbut they won't keep growing until it's repaired!\nRepair a garden bed by placing another of the same variety in its place,\nor destroy it to regain some of the resources used to build it.",
@@ -30,5 +29,7 @@
 	"config.sprinklersenabled.name": "Sprinklers enabled",
 	"config.sprinklersenabled.description": "Garden beds will be watered by sprinklers.",
 
-	"event.0.dialogue": "\"event dialogue goes here\""
+	"event.0.dialogue.1": "Hi @! You look like you've settled in well to the old farm.#$b#I can see it's growing on you... or at least on your boots!$h#$b#If you're looking to grow a little extra, or just to keep things tidy, these blueprints might help you out.",
+	"event.0.dialogue.2": "They're the plans for some farm-grade raised beds. There's a few styles here, in case you'd like to pick your favourite.#$b#I haven't got the time for gardening myself, but I still like to give back to the town gardens one way or another.",
+	"event.0.dialogue.3": "Well, if you're ever short on wood for these, you know where to buy it!$h"
 }

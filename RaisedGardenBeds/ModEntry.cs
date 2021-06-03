@@ -45,21 +45,20 @@ namespace RaisedGardenBeds
 		{
 			Game1.player.team.endOfNightStatus.AddSpriteDefinition(EndOfNightState, "LooseSprites\\PlayerStatusList", 48, 0, 16, 16);
 			Game1.content.Load<Dictionary<string, object>>(AssetManager.GameContentEventDataPath);
+
+			// Reinitialise objects to recalculate XmlIgnore values
 			if (Context.IsMainPlayer)
 			{
-				// Reinitialise objects to recalculate XmlIgnore values
 				OutdoorPot.AdjustAll(reinitialise: true);
 			}
 			else
 			{
-				Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
 				OutdoorPot.AdjustAllOnNextTick();
 			}
 		}
 
 		private void GameLoop_DayStarted(object sender, DayStartedEventArgs e)
 		{
-
 			// Invalidate sprites at the start of each day in case patches target the asset
 			OutdoorPot.ReloadSprites();
 
@@ -74,6 +73,22 @@ namespace RaisedGardenBeds
 			{
 				OutdoorPot.BreakAll();
 			}
+		}
+
+		private void Specialized_LoadStageChanged(object sender, LoadStageChangedEventArgs e)
+		{
+			if (e.NewStage == StardewModdingAPI.Enums.LoadStage.Loaded && !Context.IsMainPlayer)
+			{
+				Helper.Content.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
+				Helper.Content.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
+				Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
+			}
+		}
+
+		private void SpaceEvents_ShowNightEndMenus(object sender, SpaceCore.Events.EventArgsShowNightEndMenus e)
+		{
+			// Add and show any newly-available object recipes to player list at the end of day screens
+			NewRecipeMenu.Push(AddNewAvailableRecipes());
 		}
 
 		private void Event_LoadLate(object sender, OneSecondUpdateTickedEventArgs e)
@@ -139,37 +154,58 @@ namespace RaisedGardenBeds
 
 			HarmonyPatches.Patch(id: ModManifest.UniqueID);
 
+			Helper.Events.Specialized.LoadStageChanged += this.Specialized_LoadStageChanged;
 			Helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
 			Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
 			Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 
 			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
 
-			Helper.ConsoleCommands.Add(name: CommandPrefix + "give", "Drop some raised bed items.", Cmd_Give);
-			Helper.ConsoleCommands.Add(name: CommandPrefix + "prebreak", "Mark all raised beds as ready to break.", Cmd_Prebreak);
-			Helper.ConsoleCommands.Add(name: CommandPrefix + "checkdirt", "Check whether garden bed under cursor is watered.", Cmd_CheckDirt);
-		}
+			Helper.ConsoleCommands.Add(
+				name: CommandPrefix + "give",
+				documentation: "Give several unlocked raised beds.\nHas no effect if none are available.\n",
+				callback: Cmd_Give);
+			Helper.ConsoleCommands.Add(
+				name: CommandPrefix + "giveall",
+				documentation: "Give several of all varieties of raised beds.",
+				callback: Cmd_GiveAll);
 
-		private void SpaceEvents_ShowNightEndMenus(object sender, SpaceCore.Events.EventArgsShowNightEndMenus e)
-		{
-			// Add and show any newly-available object recipes to player list at the end of day screens
-			NewRecipeMenu.Push(AddNewAvailableRecipes());
+			/*
+			Helper.ConsoleCommands.Add(
+				name: CommandPrefix + "prebreak",
+				documentation: "Mark all raised beds as ready to break.",
+				callback: Cmd_Prebreak);
+			Helper.ConsoleCommands.Add(
+				name: CommandPrefix + "checkdirt",
+				documentation: "Check whether garden bed under cursor is watered.",
+				callback: Cmd_CheckDirt);
+			*/
 		}
 
 		public static void AddDefaultRecipes()
 		{
+			List<string> recipesToAdd = new List<string>();
+			int[] eventsSeen = Game1.player.eventsSeen.ToArray();
+			string precondition = $"{EventRoot}/{EventData[0]["Conditions"]}";
+			int rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
+			bool hasOrWillSeeRootEvent = eventsSeen.Contains(EventRoot)
+				|| rootEventReady != -1;
 			for (int i = 0; i < ItemDefinitions.Count; ++i)
 			{
 				string varietyName = ItemDefinitions.Keys.ElementAt(i);
 				string craftingRecipeName = OutdoorPot.GenericName + "." + varietyName;
+				bool isAlreadyKnown = Game1.player.craftingRecipes.ContainsKey(craftingRecipeName);
+				bool isDefaultRecipe = bool.Parse(ItemDefinitions[varietyName]["RecipeIsDefault"]);
+				bool isInitialEventRecipe = string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"]);
 
-				if (!Game1.player.craftingRecipes.ContainsKey(craftingRecipeName) // Recipe not yet known
-					&& (Config.RecipesAlwaysAvailable								// All recipes globally available
-						|| bool.Parse(ItemDefinitions[varietyName]["RecipeIsDefault"]) // Recipe  available by default
-					|| (Game1.player.eventsSeen.Contains(EventRoot) && string.IsNullOrEmpty(ItemDefinitions[varietyName]["RecipeConditions"])))) // Recipe has no conditions
+				if (!isAlreadyKnown && (Config.RecipesAlwaysAvailable || isDefaultRecipe || (hasOrWillSeeRootEvent && isInitialEventRecipe)))
 				{
-					Game1.player.craftingRecipes.Add(craftingRecipeName, 0);
+					recipesToAdd.Add(craftingRecipeName);
 				}
+			}
+			for (int i = 0; i < recipesToAdd.Count; ++i)
+			{
+				Game1.player.craftingRecipes.Add(recipesToAdd[i], 0);
 			}
 		}
 
@@ -199,23 +235,41 @@ namespace RaisedGardenBeds
 			return newVarieties;
 		}
 
+		private static void Give(string variantKey, int quantity)
+		{
+			OutdoorPot item = new OutdoorPot(variant: OutdoorPot.GetVariantIndexFromName(variantKey), tileLocation: Vector2.Zero)
+			{
+				Stack = quantity
+			};
+			if (!Game1.player.addItemToInventoryBool(item))
+			{
+				Log.D("Inventory full: Did not add " + variantKey + " raised bed.");
+			}
+		}
+
 		public static void Cmd_Give(string s, string[] args)
 		{
 			const int defaultQuantity = 25;
 			int quantity = args.Length == 0 ? defaultQuantity : int.TryParse(args[0], out int argQuantity) ? argQuantity : defaultQuantity;
-			foreach (string key in ItemDefinitions.Keys)
+			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName));
+			foreach (string variantKey in unlockedKeys)
 			{
-				OutdoorPot item = new OutdoorPot(variant: OutdoorPot.GetVariantIndexFromName(key), tileLocation: Vector2.Zero)
-				{
-					Stack = quantity
-				};
-				if (!Game1.player.addItemToInventoryBool(item))
-				{
-					Log.D("Inventory full: Did not add " + key + " raised bed.");
-				}
+				Give(variantKey: variantKey, quantity: quantity);
 			}
 		}
 
+		public static void Cmd_GiveAll(string s, string[] args)
+		{
+			const int defaultQuantity = 25;
+			int quantity = args.Length == 0 ? defaultQuantity : int.TryParse(args[0], out int argQuantity) ? argQuantity : defaultQuantity;
+			foreach (string variantKey in ItemDefinitions.Keys)
+			{
+				Give(variantKey: variantKey, quantity: quantity);
+			}
+		}
+
+
+		/*
 		public static void Cmd_Prebreak(string s, string[] args)
 		{
 			if (!Config.RaisedBedsMayBreakWithAge)
@@ -248,5 +302,6 @@ namespace RaisedGardenBeds
 
 			Log.D($"No RGB.OP at {tile}.");
 		}
+		*/
 	}
 }

@@ -2,7 +2,7 @@
 	"Name": "Raised Garden Beds",
 	"Author": "blueberry",
 	"Version": "1.0.0",
-	"Description": "What the..?",
+	"Description": "Garden beds for your farm, usable outdoors with seasonal crops.",
 	"UniqueID": "blueberry.RaisedGardenBeds",
 	"EntryDll": "RaisedGardenBeds.dll",
 	"MinimumApiVersion": "3.0.0",
