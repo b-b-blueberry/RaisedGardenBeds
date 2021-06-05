@@ -1,4 +1,4 @@
-![](https://i.imgur.com/hhmsueA.png)
+![](https://i.imgur.com/oZVPRlF.png)
 
 Fancy making the most of the unplantable space on your farm? Spotted the perfect site for a herb garden?  
 Maybe you're just in it for the aesthetic! Build a garden bed anywhere you like on the farm, and grow your stuff in style.  
