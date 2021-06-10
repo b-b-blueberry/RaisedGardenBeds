@@ -1,4 +1,4 @@
-![](https://i.imgur.com/hhmsueA.png)
+![](https://i.imgur.com/oZVPRlF.png)
 
 Fancy making the most of the unplantable space on your farm? Spotted the perfect site for a herb garden?  
 Maybe you're just in it for the aesthetic! Build a garden bed anywhere you like on the farm, and grow your stuff in style.  
@@ -16,6 +16,13 @@ Garden beds break down at the end-of-season if they've grown old, but multi-seas
 ![](https://i.imgur.com/Gbi0Ju7.png) There's a few varieties to start off, each using different resources to craft, and with different lifespans.  
 You'll find new themes appear as you reach different milestones while playing ...
 
+
+
+![](https://i.imgur.com/aKBnDRv.png)
+
+1. Install the latest versions of [SMAPI](https://smapi.io/) and [Json Assets](https://www.nexusmods.com/stardewvalley/mods/1720/),
+2. Install this mod via [Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/5305),
+3. Run the game using SMAPI
 
 
 
