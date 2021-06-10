@@ -1,10 +1,10 @@
 ﻿{
 	"Name": "blueberry.rgb.raisedbed",
 	"Description": "Not spawnable with CJB Item Spawner: type 'rgbgive' into the SMAPI console to get some!",
-	"Price": 80,
+	"Price": 90,
 	"ProvidesLight": false,
 
-	"ReserveExtraIndexCount": 10,
+	"ReserveExtraIndexCount": 15,
 
 	"CanPurchase": false,
 	"PurchaseFrom": "Robin",

@@ -58,15 +58,15 @@ namespace RaisedGardenBeds
 		public bool CanEdit<T>(IAssetInfo asset)
 		{
 			bool isCustomContentReady = OutdoorPot.Sprites != null && ModEntry.JsonAssets != null && !(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu);
-			return isCustomContentReady
-				&& (asset.AssetNameEquals(GameContentItemDefinitionsPath)
-					|| asset.AssetNameEquals(GameContentEventDataPath)
-					|| asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables"))
-					|| asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation"))
-					|| asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes"))
-					|| (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
-						&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
-						&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where)));
+			return asset.AssetNameEquals(GameContentItemDefinitionsPath)
+				|| (isCustomContentReady
+					&& (asset.AssetNameEquals(GameContentEventDataPath)
+						|| asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables"))
+						|| asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation"))
+						|| asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes"))
+						|| (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
+							&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
+							&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where))));
 		}
 
 		public void Edit<T>(IAssetData asset)
@@ -78,13 +78,30 @@ namespace RaisedGardenBeds
 				string itemDataPath = Path.Combine(ContentPackPath, "BigCraftables", "Raised Bed", "big-craftable.json");
 				var itemData = _helper.Content.Load<Dictionary<string, object>>(itemDataPath);
 				var data = asset.AsDictionary<string, Dictionary<string, string>>().Data;
-				while (data.Count > (int)itemData["ReserveExtraIndexCount"] || data.Count > OutdoorPot.Sprites.Height / Game1.smallestTileSize * 2)
+
+				long numberOfVariants = 1 + System.Convert.ToInt64(itemData["ReserveExtraIndexCount"]);
+				int numberOfSprites = OutdoorPot.Sprites.Height / Game1.smallestTileSize / 2;
+				string warnMessage = null;
+				if (data.Count > numberOfVariants || data.Count > numberOfSprites)
 				{
-					string key = ModEntry.ItemDefinitions.Last().Key;
-					if (data.Remove(key))
-						Log.W("Removing excess raised bed: " + key);
-					else
-						break;
+					warnMessage = $"Found {numberOfVariants - data.Count} partially-defined garden beds in ItemDefinitions.";
+					if (data.Count > numberOfVariants)
+						warnMessage += $"\nJSON big-craftable 'ReserveExtraIndexCount': {numberOfVariants - 1}.";
+					if (data.Count > numberOfSprites)
+						warnMessage += $"\nJSON big-craftable blank sprite files found: {numberOfSprites}";
+				}
+				
+				if (warnMessage != null)
+				{
+					Log.W(warnMessage);
+					while (data.Count > numberOfVariants || data.Count > numberOfSprites)
+					{
+						string key = data.Last().Key;
+						if (data.Remove(key))
+							Log.W("Removing excess raised bed: " + key);
+						else
+							Log.E("Failed to remove excess raised bed: " + key);
+					}
 				}
 				return;
 			}
