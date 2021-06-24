@@ -16,6 +16,8 @@
 	"item.description": "Allows for planting seasonal crops on unsuitable ground. Can only be placed outdoors.",
 	"item.description.indoors": "Allows for planting seasonal crops on unsuitable ground.",
 
+	"menu.title.new": "New blueprints",
+
 	"config.raisedbedsmaybreakwithage.name": "Garden beds break with age",
 	"config.raisedbedsmaybreakwithage.description": "Garden beds will deteriorate at the start of each new season if enabled.\nThe lifespan of each variety of bed differs,\nwith more expensive varieties lasting longer!\n\nMulti-season crops growing in garden beds will survive if their bed is broken,\nbut they won't keep growing until it's repaired!\nRepair a garden bed by placing another of the same variety in its place,\nor destroy it to regain some of the resources used to build it.",
 	"config.canbeplacedingreenhouse.name": "Can be placed in greenhouse",

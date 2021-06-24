@@ -1,0 +1,37 @@
+﻿{
+	"item.name": "Bahçe Tarhı",
+	"item.name.wood": "Odun Bahçe Tarhı",
+	"item.name.hardwood": "Kereste Bahçe Tarhı",
+	"item.name.stone": "Taş Bahçe Tarhı",
+	"item.name.clay": "Tuğla Bahçe Tarhı",
+	"item.name.driftwood": "Eski Bahçe Tarhı",
+	"item.name.gold": "Altın Bahçe Tarhı",
+	"item.name.void": "Boşluk Bahçe Tarhı",
+	"item.name.jungle": "Yabani Bahçe Tarhı",
+	"item.name.dungeon": "Ürkütücü Bahçe Tarhı",
+	"item.name.candy": "Şeker Bahçe Tarhı",
+	"item.name.beach": "Kumsal Bahçe Tarhı",
+	"item.name.bone": "Mezar Bahçe Tarhı",
+
+	"item.description": "Elverişsiz yerde mevsimsel ekinleri ekmeye izin verir. Yalnızca dışarıya yerleştirilebilir.",
+	"item.description.indoors": "Elverişsiz yerde mevsimsel ekinleri ekmeye izin verir.",
+
+	"menu.title.new": "Yeni oluşturma planı",
+
+	"config.raisedbedsmaybreakwithage.name": "Bahçe tarhları eskidikçe kırılacak",
+	"config.raisedbedsmaybreakwithage.description": "Eğer bu ayar açılırsa, bahçe tarhları her mevsimin başında dayanıklılığı azalacak.\nHer tarh çeşidinin ömrü değişir,\ndaha pahalı çeşitlerse daha uzun dayanır!\n\nBirden fazla mevsimde yetişen ekinler tarhları kırılsa da hayatta kalacak,\nancak tamir edilene kadar büyümeye devam etmeyecekler!\nBir bahçe tarhını onun yerine aynı çeşitten başka bir tane yerleştirerek tamir edin,\nveya onu yapmak için kullanılmış kaynakların bir kısmını geri kazanmak için yok edin.",
+	"config.canbeplacedingreenhouse.name": "Seraya yerleştirilebilir",
+	"config.canbeplacedingreenhouse.description": "",
+	"config.canbeplacedinfarmhouse.name": "Çiftlik evine yerleştirilebilir",
+	"config.canbeplacedinfarmhouse.description": "",
+	"config.canbeplacedinbuildings.name": "Çiftlik binalarına yerleştirilebilir",
+	"config.canbeplacedinbuildings.description": "",
+	"config.recipesalwaysavailable.name": "Tarifler her zaman mevcut",
+	"config.recipesalwaysavailable.description": "Tüm çeşitler her zaman mevcut olacak.\nEğer kapatılırsa, Robin yazdan itibaren sana basit tarifler verecek,\nve oynayarak daha çok tarif öğreneceksin!",
+	"config.sprinklersenabled.name": "Fıskiyeler açık",
+	"config.sprinklersenabled.description": "Bahçe tarhları fıskiyeler tarafından sulanabilecek.",
+
+	"event.0.dialogue.1": "Selam @! Eski çiftliğe iyice yerleşmiş gibi görünüyorsun.#$b#Hoşuna gitmeye başladığını görebiliyorum... veya botlarının!$h#$b#Eğer biraz daha fazla ekin yetiştirmeye, veya sadece işleri düzenli tutmaya bakıyorsan, bu taslaklar işine yarayabilir.",
+	"event.0.dialogue.2": "Bunlar çiftlik sınıfı yükseltilmiş tarhlar için planlar. Burada birkaç tarz var, en beğendiğini seçebilirsin.#$b#Kendimce bahçecilik için zamanım yok, ancak bir şekilde kasaba bahçelerine geri vermeyi hala seviyorum.",
+	"event.0.dialogue.3": "Şey, olur da bunlar için odunun kalmazsa nereden alacağını biliyorsun!$h"
+}
