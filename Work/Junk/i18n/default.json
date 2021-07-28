@@ -1,20 +1,10 @@
 ﻿{
 	"item.name": "Garden Bed",
-	"item.name.wood": "Wood Garden Bed",
-	"item.name.hardwood": "Hardwood Garden Bed",
-	"item.name.stone": "Stone Garden Bed",
-	"item.name.clay": "Brick Garden Bed",
-	"item.name.driftwood": "Old Garden Bed",
-	"item.name.gold": "Gold Garden Bed",
-	"item.name.void": "Void Garden Bed",
-	"item.name.jungle": "Wild Garden Bed",
-	"item.name.dungeon": "Spooky Garden Bed",
-	"item.name.candy": "Candy Garden Bed",
-	"item.name.beach": "Beach Garden Bed",
-	"item.name.bone": "Crypt Garden Bed",
+	"item.name.variant": "{{LocalName}} Garden Bed",
 
 	"item.description": "Allows for planting seasonal crops on unsuitable ground. Can only be placed outdoors.",
 	"item.description.indoors": "Allows for planting seasonal crops on unsuitable ground.",
+	"item.description.default": "Dummy object, not spawnable with CJB Item Spawner. Type 'rgb.give' into the SMAPI console to get some!",
 
 	"menu.title.new": "New blueprints",
 
@@ -32,6 +22,7 @@
 	"config.sprinklersenabled.description": "Garden beds will be watered by sprinklers.",
 
 	"event.0.dialogue.1": "Hi @! You look like you've settled in well to the old farm.#$b#I can see it's growing on you... or at least on your boots!$h#$b#If you're looking to grow a little extra, or just to keep things tidy, these blueprints might help you out.",
-	"event.0.dialogue.2": "They're the plans for some farm-grade raised beds. There's a few styles here, in case you'd like to pick your favourite.#$b#I haven't got the time for gardening myself, but I still like to give back to the town gardens one way or another.",
-	"event.0.dialogue.3": "Well, if you're ever short on wood for these, you know where to buy it!$h"
+	"event.0.dialogue.2": "Learned how to craft 'Garden Beds'",
+	"event.0.dialogue.3": "They're the plans for some farm-grade raised beds. There's a few styles here, in case you'd like to pick your favourite.#$b#I haven't got the time for gardening myself, but I still like to give back to the town gardens one way or another.",
+	"event.0.dialogue.4": "Well, if you're ever short on wood for these, you know where to buy it!$h"
 }

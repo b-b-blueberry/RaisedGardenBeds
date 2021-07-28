@@ -9,9 +9,12 @@ namespace RaisedGardenBeds
 {
 	public static class HarmonyPatches
 	{
-		public static void Patch(string id)
+		internal static void Patch(string id)
 		{
 			HarmonyInstance harmony = HarmonyInstance.Create(id);
+
+			Log.T(typeof(HarmonyPatches).GetMethods().Take(typeof(HarmonyPatches).GetMethods().Count() - 4).Select(mi => mi.Name)
+				.Aggregate("Applying Harmony patches:", (str, s) => str + Environment.NewLine + s));
 
 			// Utility
 			harmony.Patch(
@@ -45,7 +48,7 @@ namespace RaisedGardenBeds
 
 		private static void ErrorHandler(Exception e)
 		{
-			Log.E(ModEntry.Instance.ModManifest.UniqueID + " failed in harmony prefix.\n" + e);
+			Log.E($"{ModEntry.Instance.ModManifest.UniqueID} failed in harmony prefix.{Environment.NewLine}{e}");
 		}
 
 		public static bool Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix(
@@ -147,7 +150,7 @@ namespace RaisedGardenBeds
 		/// <summary>
 		/// Replace crafting recipe hover logic to instead show garden bed display names for each variant.
 		/// </summary>
-		internal static void CraftingPage_PerformHoverAction_Postfix(
+		public static void CraftingPage_PerformHoverAction_Postfix(
 			CraftingRecipe ___hoverRecipe)
 		{
 			// Add display name in crafting pages
@@ -160,7 +163,7 @@ namespace RaisedGardenBeds
 		/// <summary>
 		/// Replace logic for crafting objects in base game crafting menu to create the appropriate garden bed for the crafting recipe variant.
 		/// </summary>
-		internal static bool CraftingPage_ClickCraftingRecipe_Prefix(
+		public static bool CraftingPage_ClickCraftingRecipe_Prefix(
 			CraftingPage __instance,
 			int ___currentCraftingPage,
 			ref Item ___heldItem,
@@ -177,8 +180,7 @@ namespace RaisedGardenBeds
 					return true;
 
 				OutdoorPot item = new OutdoorPot(
-					variant: ModEntry.ItemDefinitions.Keys.ToList()
-						.IndexOf(ModEntry.ItemDefinitions.First(kvp => kvp.Value["RecipeItems"].Split(' ')[0] == recipe.recipeList.Keys.ToList()[0].ToString()).Key),
+					variantKey: OutdoorPot.GetVariantKeyFromName(recipe.name),
 					tileLocation: Vector2.Zero);
 
 				// Behaviours as from base method
@@ -214,7 +216,7 @@ namespace RaisedGardenBeds
 		/// <summary>
 		/// Replace logic determining sprite index to draw from in crafting page to instead choose the garden bed variant sprite for this recipe.
 		/// </summary>
-		internal static void CraftingRecipe_GetIndexOfMenuView_Postfix(
+		public static void CraftingRecipe_GetIndexOfMenuView_Postfix(
 			CraftingRecipe __instance,
 			ref int __result)
 		{

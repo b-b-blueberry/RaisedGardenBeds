@@ -1,17 +1,6 @@
 ﻿{
 	"item.name": "Bahçe Tarhı",
-	"item.name.wood": "Odun Bahçe Tarhı",
-	"item.name.hardwood": "Kereste Bahçe Tarhı",
-	"item.name.stone": "Taş Bahçe Tarhı",
-	"item.name.clay": "Tuğla Bahçe Tarhı",
-	"item.name.driftwood": "Eski Bahçe Tarhı",
-	"item.name.gold": "Altın Bahçe Tarhı",
-	"item.name.void": "Boşluk Bahçe Tarhı",
-	"item.name.jungle": "Yabani Bahçe Tarhı",
-	"item.name.dungeon": "Ürkütücü Bahçe Tarhı",
-	"item.name.candy": "Şeker Bahçe Tarhı",
-	"item.name.beach": "Kumsal Bahçe Tarhı",
-	"item.name.bone": "Mezar Bahçe Tarhı",
+	"item.name.variant": "{{LocalName}} Bahçe Tarhı",
 
 	"item.description": "Elverişsiz yerde mevsimsel ekinleri ekmeye izin verir. Yalnızca dışarıya yerleştirilebilir.",
 	"item.description.indoors": "Elverişsiz yerde mevsimsel ekinleri ekmeye izin verir.",

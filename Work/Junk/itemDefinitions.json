@@ -1,6 +1,7 @@
 {
 	"wood": {
 		"RecipeItems": "388 20", // Wood
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 44,
@@ -8,6 +9,7 @@
 	},
 	"stone": {
 		"RecipeItems": "390 20", // Stone
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 60,
@@ -15,6 +17,7 @@
 	},
 	"clay": {
 		"RecipeItems": "330 10", // Clay
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": null,
 		"DaysToBreak": 60,
@@ -22,6 +25,7 @@
 	},
 	"hardwood": {
 		"RecipeItems": "709 5", // Hardwood
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "y 2",
 		"DaysToBreak": 84,
@@ -29,6 +33,7 @@
 	},
 	"driftwood": {
 		"RecipeItems": "169 3", // Driftwood
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n beachBridgeFixed",
 		"DaysToBreak": 32,
@@ -36,6 +41,7 @@
 	},
 	"gold": {
 		"RecipeItems": "336 2", // Gold Bar
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "m 1000000",
 		"DaysToBreak": 9999,
@@ -43,6 +49,7 @@
 	},
 	"void": {
 		"RecipeItems": "769 10 390 10", // Void Essence, Stone
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n slimeHutchBuilt",
 		"DaysToBreak": 128,
@@ -50,6 +57,7 @@
 	},
 	"jungle": {
 		"RecipeItems": "771 5 390 10", // Fibre, Stone
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n hasPickedUpMagicInk",
 		"DaysToBreak": 60,
@@ -57,6 +65,7 @@
 	},
 	"dungeon": {
 		"RecipeItems": "382 2 390 10", // Coal, Stone
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "b 1",
 		"DaysToBreak": 84,
@@ -64,6 +73,7 @@
 	},
 	"candy": {
 		"RecipeItems": "245 2 388 10", // Sugar, Wood
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n winter_14",
 		"DaysToBreak": 84,
@@ -71,6 +81,7 @@
 	},
 	"beach": {
 		"RecipeItems": "388 20", // Wood
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n summer_10",
 		"DaysToBreak": 44,
@@ -78,6 +89,7 @@
 	},
 	"bone": {
 		"RecipeItems": "881 5 390 10", // Bone Fragment, Stone
+		"RecipeCraftedCount": 1,
 		"RecipeIsDefault": false,
 		"RecipeConditions": "n fall_26",
 		"DaysToBreak": 84,

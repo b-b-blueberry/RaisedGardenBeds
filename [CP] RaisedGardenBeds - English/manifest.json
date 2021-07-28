@@ -1,0 +1,11 @@
+﻿{
+	"Name": "[CP] Raised Garden Beds Translation: English",
+	"Author": "blueberry",
+	"Version": "1.0.0",
+	"Description": "Translation pack for Raised Garden Beds.",
+	"UniqueID": "blueberry.RaisedGardenBeds.Translation.English.CP",
+	"UpdateKeys": [ "Nexus:????" ],
+	"ContentPackFor": {
+		"UniqueID": "Pathoschild.ContentPatcher"
+	}
+}

@@ -1,8 +1,6 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Newtonsoft.Json;
+﻿using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
-using StardewValley;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,20 +9,17 @@ namespace RaisedGardenBeds
 {
 	public class AssetManager : IAssetLoader, IAssetEditor
 	{
-		private IModHelper _helper;
-		private ITranslationHelper i18n => _helper.Translation;
+		private readonly IModHelper _helper;
 
-		internal const string AssetPrefix = "blueberry.rgb.Assets";
+		internal static readonly string AssetPrefix = Path.Combine("Mods", "blueberry.rgb.Assets");
 
 		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(AssetPrefix, "EndOfNightSprites");
-		internal static readonly string GameContentItemDefinitionsPath = Path.Combine(AssetPrefix, "ItemDefinitions");
 		internal static readonly string GameContentEventDataPath = Path.Combine(AssetPrefix, "EventData");
-		internal static readonly string GameContentSpritesPath = Path.Combine(AssetPrefix, "Sprites");
+		internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(AssetPrefix, "CommonTranslations");
+		internal static readonly string GameContentItemTranslationDataPath = Path.Combine(AssetPrefix, "ItemTranslations");
 
 		internal static readonly string LocalEndOfNightSpritesPath = Path.Combine("assets", "endOfNightSprites.png");
-		internal static readonly string LocalItemDefinitionsPath = Path.Combine("assets", "itemDefinitions.json");
 		internal static readonly string LocalEventDataPath = Path.Combine("assets", "eventData.json");
-		internal static readonly string LocalSpritesPath = Path.Combine("assets", "sprites.png");
 
 		internal static readonly string ContentPackPath = Path.Combine("assets", "ContentPack");
 
@@ -37,179 +32,173 @@ namespace RaisedGardenBeds
 		public bool CanLoad<T>(IAssetInfo asset)
 		{
 			return asset.AssetNameEquals(GameContentEndOfNightSpritesPath)
-				|| asset.AssetNameEquals(GameContentItemDefinitionsPath)
 				|| asset.AssetNameEquals(GameContentEventDataPath)
-				|| asset.AssetNameEquals(GameContentSpritesPath);
+				|| asset.AssetNameEquals(GameContentCommonTranslationDataPath)
+				|| asset.AssetNameEquals(GameContentItemTranslationDataPath);
 		}
 
 		public T Load<T>(IAssetInfo asset)
 		{
-			if (asset.AssetNameEquals(GameContentSpritesPath))
-				return (T)(object)_helper.Content.Load<Texture2D>(LocalSpritesPath);
 			if (asset.AssetNameEquals(GameContentEndOfNightSpritesPath))
-				return (T)(object)_helper.Content.Load<Texture2D>(LocalEndOfNightSpritesPath);
+				return (T)(object)_helper.Content.Load
+					<Texture2D>
+					(LocalEndOfNightSpritesPath);
 			if (asset.AssetNameEquals(GameContentEventDataPath))
-				return (T)(object)_helper.Content.Load<Dictionary<string, object>>(LocalEventDataPath);
-			if (asset.AssetNameEquals(GameContentItemDefinitionsPath))
-				return (T)(object)_helper.Content.Load<Dictionary<string, Dictionary<string, string>>>(LocalItemDefinitionsPath);
+				return (T)(object)_helper.Content.Load
+					<Dictionary<string, object>>
+					(LocalEventDataPath);
+			if (asset.AssetNameEquals(GameContentCommonTranslationDataPath))
+				return (T)(object)new Dictionary
+					<string, Dictionary<string, string>>
+					(StringComparer.InvariantCultureIgnoreCase);
+			if (asset.AssetNameEquals(GameContentItemTranslationDataPath))
+				return (T)(object)new Dictionary
+					<string, Dictionary<string, Dictionary<string, string>>>
+					(StringComparer.InvariantCultureIgnoreCase);
 			return (T)(object)null;
 		}
 
 		public bool CanEdit<T>(IAssetInfo asset)
 		{
-			bool isCustomContentReady = OutdoorPot.Sprites != null && ModEntry.JsonAssets != null && !(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu);
-			return asset.AssetNameEquals(GameContentItemDefinitionsPath)
-				|| (isCustomContentReady
-					&& (asset.AssetNameEquals(GameContentEventDataPath)
-						|| asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables"))
-						|| asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation"))
-						|| asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes"))
-						|| (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
-							&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
-							&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where))));
+			return asset.AssetNameEquals(GameContentEventDataPath)
+				|| asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables"))
+				|| asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation"))
+				|| asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes"))
+				// Also patch the event dictionary for any locations with an entry in our event definitions
+				|| (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
+					&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where
+					&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where));
 		}
 
 		public void Edit<T>(IAssetData asset)
 		{
-			// Local data
-			if (asset.AssetNameEquals(GameContentItemDefinitionsPath))
-			{
-				// Remove items until number is within the reserved set
-				string itemDataPath = Path.Combine(ContentPackPath, "BigCraftables", "Raised Bed", "big-craftable.json");
-				var itemData = _helper.Content.Load<Dictionary<string, object>>(itemDataPath);
-				var data = asset.AsDictionary<string, Dictionary<string, string>>().Data;
+			/*********
+			Local data
+			*********/
 
-				long numberOfVariants = 1 + System.Convert.ToInt64(itemData["ReserveExtraIndexCount"]);
-				int numberOfSprites = OutdoorPot.Sprites.Height / Game1.smallestTileSize / 2;
-				string warnMessage = null;
-				if (data.Count > numberOfVariants || data.Count > numberOfSprites)
-				{
-					warnMessage = $"Found {numberOfVariants - data.Count} partially-defined garden beds in ItemDefinitions.";
-					if (data.Count > numberOfVariants)
-						warnMessage += $"\nJSON big-craftable 'ReserveExtraIndexCount': {numberOfVariants - 1}.";
-					if (data.Count > numberOfSprites)
-						warnMessage += $"\nJSON big-craftable blank sprite files found: {numberOfSprites}";
-				}
-				
-				if (warnMessage != null)
-				{
-					Log.W(warnMessage);
-					while (data.Count > numberOfVariants || data.Count > numberOfSprites)
-					{
-						string key = data.Last().Key;
-						if (data.Remove(key))
-							Log.W("Removing excess raised bed: " + key);
-						else
-							Log.E("Failed to remove excess raised bed: " + key);
-					}
-				}
-				return;
-			}
 			if (asset.AssetNameEquals(GameContentEventDataPath))
 			{
-				var events = ((Newtonsoft.Json.Linq.JArray)asset.AsDictionary<string, object>().Data["Events"])
+				var events = ((Newtonsoft.Json.Linq.JArray)asset
+					.AsDictionary<string, object>()
+					.Data["Events"])
 					.ToObject<List<Dictionary<string, string>>>();
 
+				// Events are populated with preset tokens and script dialogues depending on game locale.
+
 				// Root event tokenisation
-				events[0]["Conditions"] = string.Format(
-					format: events[0]["Conditions"],
-					events[0]["Who"]);
-				events[0]["Script"] = string.Format(
-					format: events[0]["Script"],
-					events[0]["Who"],
-					i18n.Get("event.0.dialogue.1"),
-					i18n.Get("event.0.dialogue.2"),
-					i18n.Get("event.0.dialogue.3"));
+				for (int i = 0; i < events.Count; ++i)
+				{
+					string[] args = new string[] { events[i]["Who"] }
+						.Concat(Translations.GetTranslations()
+							.Where(tl => tl.Key.StartsWith($"event.{i}.dialogue."))
+							.Select(tl => tl.Value.ToString()))
+						.ToArray();
+					events[i]["Conditions"] = string.Format(
+						format: events[i]["Conditions"],
+						events[i]["Who"]);
+					events[i]["Script"] = string.Format(
+						format: events[i]["Script"],
+						args: args);
+				}
+
+				Log.T($"Loaded {events.Count} event(s).{Environment.NewLine}Root event: {events[0]["Where"]}/{events[0]["Conditions"]}");
 
 				ModEntry.EventData = events;
 
 				return;
 			}
 
-			// Game data
-			int id = ModEntry.JsonAssets == null ? -1 : ModEntry.JsonAssets.GetBigCraftableId(OutdoorPot.GenericName);
-			if (id < 0)
-				return;
-			if (asset.AssetNameEquals(Path.Combine("TileSheets", "Craftables")) && Game1.bigCraftableSpriteSheet != null)
-			{
-				// Patch basic object sprites to game craftables sheet for all variants
-				for (int variant = 0; variant < ModEntry.ItemDefinitions.Count; ++variant)
-				{
-					Rectangle destination = StardewValley.Object.getSourceRectForBigCraftable(id + variant);
-					Rectangle source;
-					string variantName = OutdoorPot.GetVariantKeyFromVariantIndex(variant: variant);
-					int soilOffsetY = int.Parse(ModEntry.ItemDefinitions[variantName]["SoilHeightAboveGround"]);
-					// soil
-					source = new Rectangle(Game1.smallestTileSize * OutdoorPot.SoilIndexInSheet, variant * Game1.smallestTileSize * 2, Game1.smallestTileSize, Game1.smallestTileSize);
-					asset.AsImage().PatchImage(
-						source: OutdoorPot.Sprites,
-						sourceArea: source,
-						targetArea: new Rectangle(destination.X, destination.Y + Game1.smallestTileSize - soilOffsetY, source.Width, source.Height),
-						patchMode: PatchMode.Overlay);
-					// object
-					source = new Rectangle(0, variant * Game1.smallestTileSize * 2, destination.Width, destination.Height);
-					asset.AsImage().PatchImage(
-						source: OutdoorPot.Sprites,
-						sourceArea: source,
-						targetArea: destination,
-						patchMode: PatchMode.Overlay);
-				}
-				return;
-			}
+			/********
+			Game data
+			********/
+
+			int id = OutdoorPot.BaseParentSheetIndex;
+
 			if (asset.AssetNameEquals(Path.Combine("Data", "BigCraftablesInformation")))
 			{
+				if (ModEntry.ItemDefinitions == null)
+					return;
+
+				// Json Assets only adds our generic object to the craftables dictionary, so we need to
+				// patch in the rest to have them added and localised.
+
 				string[] fields;
 				var data = asset.AsDictionary<int, string>().Data;
 
-				// Patch dummy entries into bigcraftables file
-				for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
+				// Set or reset the item ID for the generic object to some first best available index
+				id = OutdoorPot.BaseParentSheetIndex = data.Keys.Max() + 2;
+
+				string name, description;
+
+				// Patch generic object entry into bigcraftables file, including display name and description from localisations file
+				name = Translations.GetTranslation("item.name"); 
+				description = Translations.GetTranslation("item.description.default");
+				fields = data.First().Value.Split('/');	// Use existing data as a template; most fields are common or unused
+				fields[0] = OutdoorPot.GenericName;
+				fields[4] = description;
+				fields[8] = name;
+				data[id] = string.Join("/", fields);
+
+				// Patch in dummy object entries after generic object entry
+				for (int i = 1; i < ModEntry.ItemDefinitions.Count; ++i)
 				{
-					string varietyName = ModEntry.ItemDefinitions.Keys.ToArray()[i];
+					Content.ContentData d = ModEntry.ItemDefinitions[ModEntry.ItemDefinitions.Keys.ElementAt(i)];
+					name = Translations.GetNameTranslation(data: d);
 					fields = data[id].Split('/');
-					fields[8] = i18n.Get("item.name." + varietyName);
+					fields[4] = description;
+					fields[8] = name;
 					data[id + i] = string.Join("/", fields);
 				}
 				
-				// Patch object display name and description from localisations file
-				fields = data[id].Split('/');
-				fields[4] = i18n.Get("item.description" + (ModEntry.Config.CanBePlacedInBuildings ? ".indoors" : ""));
-				fields[8] = i18n.Get("item.name");
-				data[id] = string.Join("/", fields);
-
 				// Don't remove the generic craftable from data lookup, since it's used later for crafting recipes and defaults
 
 				return;
 			}
 			if (asset.AssetNameEquals(Path.Combine("Data", "CraftingRecipes")))
 			{
+				if (ModEntry.ItemDefinitions == null || id < 0)
+					return;
+
+				// As above for the craftables dictionary, the recipes dictionary needs to have
+				// our varieties patched in to have them appear.
+				// Since all objects share a single ParentSheetIndex, each crafting recipe will normally
+				// only produce a generic/wooden object.
+				// This is handled in HarmonyPatches.CraftingPage_ClickCraftingRecipe_Prefix, which
+				// is also needed to produce an OutdoorPot instance rather than a StardewValley.Object.
+
 				// Add crafting recipes for all object variants
 				var data = asset.AsDictionary<string, string>().Data;
-				string[] fields = data[OutdoorPot.GenericName].Split('/');
-				foreach (KeyValuePair<string, Dictionary<string, string>> idAndFields in ModEntry.ItemDefinitions)
+				foreach (KeyValuePair<string, Content.ContentData> idAndFields in ModEntry.ItemDefinitions)
 				{
 					string[] newFields = new string[]
-					{
-						idAndFields.Value["RecipeItems"],			// Crafting ingredients
-						fields[1],									// Unused field
-						fields[2],									// Crafted item ID and quantity
-						"true",										// Recipe is bigCraftable
-						"blue berry",								// Recipe conditions
-						i18n.Get("item.name." + idAndFields.Key)	// Recipe display name
+					{	// Crafting ingredients:
+						Content.ContentData.ParseRecipeIngredients(data: idAndFields.Value),
+						// Unused field:
+						"blue berry",
+						// Crafted item ID and quantity:
+						$"{OutdoorPot.BaseParentSheetIndex} {idAndFields.Value.RecipeCraftedCount}",
+						// Recipe is bigCraftable:
+						"true",
+						// Recipe conditions (we ignore these):
+						"blue berry",
+						// Recipe display name:
+						Translations.GetNameTranslation(data: idAndFields.Value)
 					};
-					data[OutdoorPot.GenericName + "." + idAndFields.Key] = string.Join("/", newFields);
+					data[OutdoorPot.GetNameFromVariantKey(idAndFields.Key)] = string.Join("/", newFields);
 				}
 
-				// Remove generic crafting recipe to prevent it from appearing in lookups
-				data.Remove(OutdoorPot.GenericName);
 				return;
 			}
 			if (asset.AssetName.StartsWith(Path.Combine("Data", "Events"))
 				&& Path.GetFileNameWithoutExtension(asset.AssetName) is string where)
 			{
+				// Patch our event data into whatever location happens to match the one specified.
+				// Event tokenisation is handled in the Edit block for GameContentEventDataPath.
+
 				if (ModEntry.EventData != null
 					&& ModEntry.EventData.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
 				{
-					string key = ModEntry.EventRoot + ModEntry.EventData.IndexOf(eventData) + "/" + eventData["Conditions"];
+					string key = $"{ModEntry.EventRootId}{ModEntry.EventData.IndexOf(eventData)}/{eventData["Conditions"]}";
 					asset.AsDictionary<string, string>().Data[key] = eventData["Script"];
 				}
 

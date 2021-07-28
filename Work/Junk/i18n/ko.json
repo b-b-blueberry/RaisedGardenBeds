@@ -1,0 +1,39 @@
+﻿{
+	"item.name": "화단",
+	"item.name.wood": "나무 화단",
+	"item.name.hardwood": "단단한 나무 화단",
+	"item.name.stone": "돌 화단",
+	"item.name.clay": "벽돌 화단",
+	"item.name.driftwood": "오래된 화단",
+	"item.name.gold": "황금 화단",
+	"item.name.void": "공허 화단",
+	"item.name.jungle": "야생 화단",
+	"item.name.dungeon": "투박한 화단",
+	"item.name.candy": "사탕 화단",
+	"item.name.beach": "해변 화단",
+	"item.name.bone": "묘지 화단",
+
+	"item.description": "계절에 상관없이 작물을 심을 수 있습니다. 실외에만 설치할 수 있습니다.",
+	"item.description.indoors": "계절에 상관없이 작물을 심을 수 있습니다.",
+	"item.description.default": "CJB아이템스포너로 뽑은 화단은 식물을 심을 수 없습니다. 화단을 치트로 얻고싶다면 SMAPI 콘솔창에 rgb.give를 입력하세요!",
+
+	"menu.title.new": "새로운 청사진",
+
+	"config.raisedbedsmaybreakwithage.name": "화단 내구도 감소",
+	"config.raisedbedsmaybreakwithage.description": "이 옵션을 활성화하면 화단이 시간이 지날수록 부서지기 시작합니다.\n화단의 종류에 따라 내구도가 다릅니다.\n비싼 화단일수록 더 오래 사용할 수 있습니다!\n\n여러 계절에 자라는 작물은 화단이 부서져도 살아남지만,\n화단이 수리되기 전까진 작물이 자라지 앉습니다!\n화단을 수리하려면 부서진 화단과 같은 종류의 화단으로 교체하세요.\n또는 부서진 화단을 철거하여 자원의 일부를 회수하세요.",
+	"config.canbeplacedingreenhouse.name": "온실에 설치 가능",
+	"config.canbeplacedingreenhouse.description": "",
+	"config.canbeplacedinfarmhouse.name": "집 안에 설치 가능 ",
+	"config.canbeplacedinfarmhouse.description": "",
+	"config.canbeplacedinbuildings.name": "농장 건물 안에 설치 가능",
+	"config.canbeplacedinbuildings.description": "",
+	"config.recipesalwaysavailable.name": "항상 제작 가능",
+	"config.recipesalwaysavailable.description": "이 옵션을 활성화하면  모든 종류의 화단을 항상 제작할 수 있습니다.\n비활성화시, 로빈이 여름부터 기본적인 제작법을 알려줍니다.\n플레이하며 더 많은 화단 제작법을 배워보세요!",
+	"config.sprinklersenabled.name": "스프링클러로 물주기",
+	"config.sprinklersenabled.description": "스프링클러로 화단에 물을 줄 수 있습니다.",
+
+	"event.0.dialogue.1": "안녕 @! 할아버지의 농장에 잘 적응한 것 같아보이네.#$b#네가 가꾼 농장이 무럭무럭 자라고 있다는게 느껴져... 네 흙투성이 장화가 그 증거야!$h#$b#네 농장을 꾸미고 정돈하는데 유용한 방식을 알려줄게. 부지런한 농부에게 도움이 되길 바래.",
+	"event.0.dialogue.2": "'화단' 제작법을 배웠다!",
+	"event.0.dialogue.3": "마을에 농장처럼 크고 멋진 화단을 조성할 계획이 있대서 여기 몇 가지 스타일 샘플도 가져왔는데, 너도 좋아하는 스타일을 골라볼래?#$b#내가 마을 화단까지 돌보고 가꿀 시간은 없을 것 같지만, 그래도 내가 이 마을의 목수로서 할 수 있는 일을 해보려고 해.",
+	"event.0.dialogue.4": "나무가 부족하다면, 어디서 사면 되는지 너도 벌써 알고 있을거야!$h"
+}
