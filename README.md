@@ -2,7 +2,7 @@
 
 Fancy making the most of the unplantable space on your farm? Spotted the perfect site for a herb garden?  
 Maybe you're just in it for the aesthetic! Build a garden bed anywhere you like on the farm, and grow your stuff in style.  
-Build them in unique shapes, or fill in a big grassy patch with crops. Remember, though: you can't walk over them!
+Build them in unique shapes, or fill in a big grassy patch with crops. Remember, though, you can't walk through them!
 
 ![](https://i.imgur.com/Gbi0Ju7.png) Garden beds work much the same as Evelyn's garden pots: unlockable, un-sprinkler-able, and all craftable!  
 When you've made friends with Robin, she'll visit after early Summer and give you the basic recipes.
@@ -20,7 +20,7 @@ You'll find new themes appear as you reach different milestones while playing ..
 
 ![](https://i.imgur.com/aKBnDRv.png)
 
-1. Install the latest versions of [SMAPI](https://smapi.io/) and [Json Assets](https://www.nexusmods.com/stardewvalley/mods/1720/),
+1. Install the latest versions of [SMAPI](https://smapi.io/), [SpaceCore](https://www.nexusmods.com/stardewvalley/mods/1348/), and [Content Patcher](https://www.nexusmods.com/stardewvalley/mods/1915/),
 2. Install this mod via [Nexus Mods](https://www.nexusmods.com/stardewvalley/mods/5305),
 3. Run the game using SMAPI
 
