@@ -28,12 +28,24 @@ namespace RaisedGardenBeds
 		**********/
 
 		/// <summary>
-		/// Override the default object displayName accessors to ensure it uses the values we set.
+		/// Overrides default object displayName accessors to ensure it uses the values we set.
 		/// </summary>
 		public override string DisplayName
 		{
 			get => this.displayName;
 			set => this.displayName = value;
+		}
+		/// <summary>
+		/// Serialised wrapper for synchronised variant key string.
+		/// Required for unique object persistence.
+		/// </summary>
+		public string VariantKey
+		{
+			get => this._variantKey.Value;
+			set
+			{
+				this.SetForVariant(variantKey: value);
+			}
 		}
 
 		/******
@@ -61,30 +73,11 @@ namespace RaisedGardenBeds
 		Temp values
 		**********/
 
-		[XmlIgnore]
-		private static int _baseParentSheetIndex = -1;
 		/// <summary>
 		/// Dynamic dummy index in game content craftables spritesheet for the generic OutdoorPot object.
 		/// </summary>
 		[XmlIgnore]
-		public static int BaseParentSheetIndex
-		{
-			get => _baseParentSheetIndex;
-			set
-			{
-				_baseParentSheetIndex = value;
-			}
-		}
-		/// <summary>
-		/// Index of current object variant in the root keys of the <see cref="ModEntry.ItemDefinitions"/> dictionary.
-		/// </summary>
-		[XmlIgnore]
-		public NetInt Variant = new NetInt();
-		/// <summary>
-		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
-		/// </summary>
-		[XmlIgnore]
-		public NetString VariantKey = new NetString();
+		public static int BaseParentSheetIndex = -1;
 		/// <summary>
 		/// Visual Y-offset of soil sprites from object tile Y-position.
 		/// </summary>
@@ -110,6 +103,11 @@ namespace RaisedGardenBeds
 		/// </summary>
 		[XmlIgnore]
 		public readonly NetArray<int, NetInt> Neighbours = new NetArray<int, NetInt>(size: 4);
+		/// <summary>
+		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
+		/// </summary>
+		[XmlIgnore]
+		private readonly NetString _variantKey = new NetString();
 		/// <summary>
 		/// Temporary one-tick variable used in <see cref="OutdoorPot.AdjustAllOnNextTick(GameLocation)"/> 
 		/// in order to indirectly provide the locations to check to the <see cref="AdjustAll(GameLocation)"/> method.
@@ -181,7 +179,7 @@ namespace RaisedGardenBeds
 			if (objectInformation != null)
 			{
 				string[] objectInfoArray = objectInformation.Split('/');
-				this.Name = variantKey != null ? $"{objectInfoArray[0]}.{variantKey}" : objectInfoArray[0];
+				this.Name = objectInfoArray[0];
 				this.Price = int.Parse(objectInfoArray[1]);
 				this.Edibility = int.Parse(objectInfoArray[2]);
 				string[] typeAndCategory = objectInfoArray[3].Split(' ');
@@ -206,10 +204,7 @@ namespace RaisedGardenBeds
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
 
 			// this (string, Vector2) : IndoorPot (Vector2)
-			if (ModEntry.ItemDefinitions != null)
-			{
-				this.SetForVariant(variantKey);
-			}
+			this.VariantKey = variantKey;
 		}
 
 		/// <summary>
@@ -217,26 +212,31 @@ namespace RaisedGardenBeds
 		/// </summary>
 		public void SetForVariant(string variantKey = null)
 		{
+			if (ModEntry.ItemDefinitions == null || !ModEntry.ItemDefinitions.Any())
+			{
+				Log.W($"Did not set {this.GetType().Name} ({this.Name}) variant: {nameof(ModEntry.ItemDefinitions)} null or empty.");
+				return;
+			}
 			bool resetBreakage = variantKey == null;
-			this.VariantKey.Value = variantKey
-				?? OutdoorPot.GetVariantKeyFromName(name: this.Name)
+			this._variantKey.Value = variantKey
+				?? this._variantKey.Value
+				?? ModEntry.ItemDefinitions.Keys.FirstOrDefault(key => key.StartsWith(ModEntry.Instance.ModManifest.Author))
 				?? ModEntry.ItemDefinitions.Keys.First();
-			this.Variant.Value = OutdoorPot.GetVariantIndexFromVariantKey(variantKey: this.VariantKey.Value);
-			this.SoilHeightAboveGround.Value = ModEntry.ItemDefinitions[this.VariantKey.Value].SoilHeightAboveGround;
-			this.BreakageStart.Value = ModEntry.ItemDefinitions[this.VariantKey.Value].DaysToBreak;
+			this.SoilHeightAboveGround.Value = ModEntry.ItemDefinitions[this.VariantKey].SoilHeightAboveGround;
+			this.BreakageStart.Value = ModEntry.ItemDefinitions[this.VariantKey].DaysToBreak;
 			this.DisplayName = this.loadDisplayName();
 			if (resetBreakage)
 			{
 				this.BreakageTimer.Value = this.BreakageStart.Value;
 			}
-			this.SpriteKey = ModEntry.ItemDefinitions[this.VariantKey.Value].SpriteKey;
-			this.SpriteIndex = ModEntry.ItemDefinitions[this.VariantKey.Value].SpriteIndex;
+			this.SpriteKey = ModEntry.ItemDefinitions[this.VariantKey].SpriteKey;
+			this.SpriteIndex = ModEntry.ItemDefinitions[this.VariantKey].SpriteIndex;
 		}
 
 		protected override void initNetFields()
 		{
 			base.initNetFields();
-			this.NetFields.AddFields(this.Variant, this.VariantKey, this.SoilHeightAboveGround, this.BreakageStart, this.BreakageTimer, this.Neighbours);
+			this.NetFields.AddFields(this._variantKey, this.SoilHeightAboveGround, this.BreakageStart, this.BreakageTimer, this.Neighbours);
 		}
 
 		public static string GetVariantKeyFromParentSheetIndex(int index)
@@ -244,9 +244,9 @@ namespace RaisedGardenBeds
 			return ModEntry.ItemDefinitions.Keys.ToList().ElementAt(index - OutdoorPot.BaseParentSheetIndex);
 		}
 
-		public static string GetVariantKeyFromVariantIndex(int variant)
+		public static string GetVariantKeyFromVariantIndex(int variantIndex)
 		{
-			return ModEntry.ItemDefinitions.Keys.ToList().ElementAt(variant);
+			return ModEntry.ItemDefinitions.Keys.ToList().ElementAt(variantIndex);
 		}
 
 		public static int GetVariantIndexFromName(string name)
@@ -292,7 +292,7 @@ namespace RaisedGardenBeds
 
 		protected override string loadDisplayName()
 		{
-			return OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey.Value);
+			return OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey);
 		}
 
 		public override string getDescription()
@@ -304,7 +304,7 @@ namespace RaisedGardenBeds
 		public override bool placementAction(GameLocation location, int x, int y, Farmer who = null)
 		{
 			Vector2 tileLocation = new Vector2(x, y) / Game1.tileSize;
-			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: tileLocation);
+			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey, tileLocation: tileLocation);
 			OutdoorPot.AdjustWithNeighbours(location: location, tileLocation: tileLocation);
 			if (Game1.player.ActiveObject == this)
 			{
@@ -361,7 +361,7 @@ namespace RaisedGardenBeds
 
 					// refund debris
 					string recipeRaw = StardewValley.CraftingRecipe.craftingRecipes
-						[OutdoorPot.GetNameFromVariantKey(OutdoorPot.GetVariantKeyFromVariantIndex(variant: this.Variant.Value))];
+						[OutdoorPot.GetNameFromVariantKey(variantKey: this.VariantKey)];
 					string[] recipeSplit = recipeRaw.Split('/')[0].Split(' ');
 					List<int> recipe = recipeSplit.ToList().ConvertAll(int.Parse);
 					int refundItem = recipe[0];
@@ -466,8 +466,8 @@ namespace RaisedGardenBeds
 
 		public override bool canStackWith(ISalable other)
 		{
-			// Objects must be of the same style (wood and wood, stone and stone, ..) in order to stack
-			return other is OutdoorPot o && o.ParentSheetIndex == this.ParentSheetIndex && o.Variant == this.Variant;
+			// Objects must be of the same variant (wood and wood, stone and stone, ..) in order to stack
+			return other is OutdoorPot o && o != null && o.VariantKey == this.VariantKey;
 		}
 
 		public override void ApplySprinklerAnimation(GameLocation location)
@@ -814,7 +814,7 @@ namespace RaisedGardenBeds
 
 		public override Item getOne()
 		{
-			return new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: this.TileLocation);
+			return new OutdoorPot(variantKey: this.VariantKey, tileLocation: this.TileLocation);
 		}
 
 		public Rectangle GetSourceRectangle()
@@ -901,21 +901,12 @@ namespace RaisedGardenBeds
 		/// </summary>
 		public static void BreakAll(GameLocation specificLocation = null)
 		{
-			void breakAllInLocation(GameLocation location)
+			foreach (GameLocation location in specificLocation != null ? new[] { specificLocation } : OutdoorPot.GetValidLocations())
 			{
 				List<OutdoorPot> pots = location.Objects.Values.OfType<OutdoorPot>().Where(o => o.IsReadyToBreak).ToList();
-				foreach (OutdoorPot pot in pots)
-				{
-					pot.Break(location: location, adjust: false);
-				}
-				OutdoorPot.AdjustAll(reinitialise: false, specificLocation: location);
+				pots.ForEach(pot => pot.Break(location: location, adjust: false));
+				OutdoorPot.AdjustAll(specificLocation: location);
 			}
-
-			if (specificLocation != null)
-				breakAllInLocation(specificLocation);
-			else
-				foreach (GameLocation location in OutdoorPot.GetValidLocations())
-					breakAllInLocation(location);
 		}
 
 		/// <summary>
@@ -944,37 +935,28 @@ namespace RaisedGardenBeds
 		private static void Event_AdjustAllOnNextTick(object sender, StardewModdingAPI.Events.UpdateTickedEventArgs e)
 		{
 			ModEntry.Instance.Helper.Events.GameLoop.UpdateTicked -= OutdoorPot.Event_AdjustAllOnNextTick;
-			OutdoorPot.AdjustAll(reinitialise: false, specificLocation: OutdoorPot.LocationToIdentifyOutdoorPots);
+			OutdoorPot.AdjustAll(specificLocation: OutdoorPot.LocationToIdentifyOutdoorPots);
 			OutdoorPot.LocationToIdentifyOutdoorPots = null;
+		}
+
+		public static void ResetAll(GameLocation specificLocation = null)
+		{
+			foreach (GameLocation location in specificLocation != null ? new [] { specificLocation } : OutdoorPot.GetValidLocations())
+				location.Objects.Values.OfType<OutdoorPot>().ToList().ForEach(o => o.SetForVariant());
 		}
 
 		/// <summary>
 		/// Adjusts sprites of all objects by reconfirming the positions of other nearby objects.
 		/// Required to form complete shapes using the four-corners method of building raised bed areas from objects.
 		/// </summary>
-		public static void AdjustAll(bool reinitialise, GameLocation specificLocation = null)
+		public static void AdjustAll(GameLocation specificLocation = null)
 		{
-			void adjustAllInLocation(GameLocation location)
-			{
-				List<Vector2> tiles = location.Objects.Keys.Where(t => location.Objects[t] is OutdoorPot).ToList();
-				foreach (Vector2 tile in tiles)
-				{
-					((OutdoorPot)location.Objects[tile]).Adjust(location: location, reinitialise: reinitialise);
-				}
-			}
-
-			if (specificLocation != null)
-				adjustAllInLocation(specificLocation);
-			else
-				foreach (GameLocation location in OutdoorPot.GetValidLocations())
-					adjustAllInLocation(location);
+			foreach (GameLocation location in specificLocation != null ? new[] { specificLocation } : OutdoorPot.GetValidLocations())
+				location.Objects.Values.OfType<OutdoorPot>().ToList().ForEach(o => o.Adjust(location: location));
 		}
 
-		public void Adjust(GameLocation location, bool reinitialise = false)
+		public void Adjust(GameLocation location)
 		{
-			if (reinitialise)
-				this.SetForVariant();
-
 			for (int i = 0; i < 4; ++i)
 			{
 				Axis n = Axis.None;
@@ -1027,7 +1009,7 @@ namespace RaisedGardenBeds
 
 		private static bool CheckNeighbour(OutdoorPot p, StardewValley.Object o)
 		{
-			bool facts = o != null && p != null && o is OutdoorPot op && op.Variant == p.Variant && !op.IsBroken;
+			bool facts = o is OutdoorPot op && op != null && op.canStackWith(p) && !op.IsBroken;
 			return facts;
 		}
 
@@ -1043,7 +1025,7 @@ namespace RaisedGardenBeds
 			return !IsItemPlantable(item) && item is StardewValley.Object o && ModEntry.Config.SprinklersEnabled && o.IsSprinkler();
 		}
 
-		public static List<GameLocation> GetValidLocations()
+		public static IEnumerable<GameLocation> GetValidLocations()
 		{
 			var locations = new List<GameLocation> { Game1.getFarm() };
 			if (ModEntry.Config.CanBePlacedInFarmHouse)

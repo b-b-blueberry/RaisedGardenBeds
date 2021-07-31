@@ -13,7 +13,7 @@ namespace RaisedGardenBeds
 
 
 		/// <summary>
-		/// Return a dictionary of all translations for the current or best available language.
+		/// Return a dictionary of all translations for the current or default language.
 		/// </summary>
 		public static Dictionary<string, string> GetTranslations()
 		{
@@ -26,7 +26,7 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// Return a dictionary of all item translations for the current or best available language.
+		/// Return a dictionary of all item translations for the current or default language.
 		/// </summary>
 		public static Dictionary<string, Dictionary<string, string>> GetItemTranslations()
 		{
@@ -46,9 +46,7 @@ namespace RaisedGardenBeds
 				|| !entries.TryGetValue(key, out translation))
 				if (!Translations.CommonTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out entries)
 					|| !entries.TryGetValue(key, out translation))
-					if (!Translations.CommonTranslations.TryGetValue(Translations.CommonTranslations.Keys.First(), out entries)
-						|| !entries.TryGetValue(key, out translation))
-						return null;
+					return key;
 			return tokens?.Length > 0 ? string.Format(translation, tokens) : translation;
 		}
 
@@ -66,10 +64,7 @@ namespace RaisedGardenBeds
 				if (!Translations.ItemTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out packs)
 					|| !packs.TryGetValue(pack, out items)
 					|| !items.TryGetValue(item, out translation))
-					if (!Translations.ItemTranslations.TryGetValue(Translations.CommonTranslations.Keys.First(), out packs)
-						|| !packs.TryGetValue(pack, out items)
-						|| !items.TryGetValue(item, out translation))
-						return null;
+					return data.LocalName;
 
 			return Translations.GetTranslation("item.name.variant", tokens: new[] { translation ?? data.LocalName });
 		}

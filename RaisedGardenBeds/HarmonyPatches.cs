@@ -157,7 +157,7 @@ namespace RaisedGardenBeds
 			if (___hoverRecipe == null)
 				return;
 			if (___hoverRecipe.name.StartsWith(OutdoorPot.GenericName))
-				___hoverRecipe.DisplayName = OutdoorPot.GetDisplayNameFromVariantKey(___hoverRecipe.name);
+				___hoverRecipe.DisplayName = OutdoorPot.GetDisplayNameFromName(___hoverRecipe.name);
 		}
 
 		/// <summary>

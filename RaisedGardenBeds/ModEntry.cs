@@ -62,7 +62,7 @@ namespace RaisedGardenBeds
 			}
 			
 			// Add always-available recipes to player list without any unique fanfare
-			AddDefaultRecipes();
+			ModEntry.AddDefaultRecipes();
 		}
 
 		private void GameLoop_DayEnding(object sender, DayEndingEventArgs e)
@@ -214,7 +214,7 @@ namespace RaisedGardenBeds
 			// Reinitialise objects to recalculate XmlIgnore values
 			if (Context.IsMainPlayer)
 			{
-				OutdoorPot.AdjustAll(reinitialise: true);
+				OutdoorPot.AdjustAll();
 			}
 			else
 			{
@@ -418,13 +418,19 @@ namespace RaisedGardenBeds
 					? argQuantity
 					: defaultQuantity;
 
+			if (Game1.player.craftingRecipes.Keys.Count(r => r.StartsWith(OutdoorPot.GenericName)) < 1)
+			{
+				Log.D($"No raised bed recipes are unlocked! Use '{CommandPrefix}giveall' to add all varieties.");
+				return;
+			}
+
 			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{CommandPrefix}giveall' to add all varieties.");
 
 			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys
 				.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName));
 			foreach (string variantKey in unlockedKeys)
 			{
-				Give(variantKey: variantKey, quantity: quantity);
+				ModEntry.Give(variantKey: variantKey, quantity: quantity);
 			}
 		}
 
@@ -437,17 +443,11 @@ namespace RaisedGardenBeds
 					? argQuantity
 					: defaultQuantity;
 
-			if (Game1.player.craftingRecipes.Keys.Count(r => r.StartsWith(OutdoorPot.GenericName)) < 1)
-			{
-				Log.D($"No raised bed recipes are unlocked! Use '{CommandPrefix}giveall' to add all varieties.");
-				return;
-			}
-
 			Log.D($"Adding {quantity} of all raised beds. Use '{CommandPrefix}give' to add unlocked varieties only.");
 
 			foreach (string variantKey in ItemDefinitions.Keys)
 			{
-				Give(variantKey: variantKey, quantity: quantity);
+				ModEntry.Give(variantKey: variantKey, quantity: quantity);
 			}
 		}
 
@@ -456,8 +456,8 @@ namespace RaisedGardenBeds
 			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
 				? argId
 				: EventRootId;
-			string msg = $"Player {(Game1.player.eventsSeen.Contains(eventId) ? "has" : "has not")} seen event {eventId}.";
-			Log.D(msg);
+
+			Log.D($"Player {(Game1.player.eventsSeen.Contains(eventId) ? "has" : "has not")} seen event {eventId}.");
 		}
 
 		public static void Cmd_ToggleEventSeen(string s, string[] args)
@@ -473,7 +473,7 @@ namespace RaisedGardenBeds
 			{
 				Game1.player.eventsSeen.Add(eventId);
 			}
-			Cmd_IsEventSeen(s: s, args: args);
+			ModEntry.Cmd_IsEventSeen(s: s, args: args);
 		}
 	}
 }
