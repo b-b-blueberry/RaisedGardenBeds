@@ -156,7 +156,7 @@ Valid range: `6-16`
 </td>
 <td>
 
-A list of json objects containing `Object` & `Count` fields that define the items required in this object's crafting recipe.
+A nested list of entries containing `Object` & `Count` fields that define the items required in this object's crafting recipe.
 
 </td>
 </tr>
