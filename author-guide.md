@@ -119,7 +119,7 @@ You can define as many object variants as you like in a single content file, wit
       }
     ],
     "DaysToBreak": 32
-    // All other omitted fields will use default values.
+    // All other omitted fields will use their default values.
   },
   // more object variant definitions . . .
 }
