@@ -248,7 +248,8 @@ Default: `null`
 ### Sprites
 Spritesheets for content packs that add more than one object variant must add subsequent sprites vertically, continuing downwards. Sprites are expected to have the same index in their spritesheet as their matching definition's index in the content file.
 
-Your spritesheet should be 160 pixels wide, and a multiple of 32 pixels tall.
+Your spritesheet should be 160 pixels wide, and a multiple of 32 pixels tall.  
+Your spritesheet should have a fully-transparent background (not shown in the template examples).
 
 The spritesheet should contain as many sprites as you have defined variants. If you have fewer entries in your content file than you have sprites, those sprites will be unused. If you have fewer sprites than you have entries in your content file, those object variants will be unused.
 
