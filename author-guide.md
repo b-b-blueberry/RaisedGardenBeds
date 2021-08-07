@@ -20,6 +20,7 @@ Wherever a `.csproj` file is found, it should be ignored. These aren't used in u
   * [Sprites](#sprites)
 * [Adding translations](#adding-translations)
   * [Languages](#languages)
+  * [Targets](#targets)
   * [Common translations](#common-translations)
   * [Item translations](#item-translations)
 * [Release a content pack](#release-a-content-pack)
@@ -400,18 +401,23 @@ tr
 
 Example translation pack: [[CP] RaisedGardenBeds - English](https://github.com/b-b-blueberry/RaisedGardenBeds/tree/master/%5BCP%5D%20RaisedGardenBeds%20-%20English)
 
+### Targets
+Translation packs must provide each `"Changes"` entry with a `"Target"` field using asset keys for either the Common Translations or Item Translations assets.
+
+Up-to-date asset keys can be found in [[CP] RaisedGardenBeds - English/content.json](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BCP%5D%20RaisedGardenBeds%20-%20English/content.json).
+
 ### Common translations
-All of this mod's text strings, event dialogue, HUD messages, and config options are translatable by targeting the `CommonTranslations` asset. 
+All of this mod's text strings, event dialogue, HUD messages, and config options are translatable by targeting the Common Translations asset (see [Targets](#targets)). 
 
 To translate common text strings throughout the mod, you need to provide your language code as a field, and then match the keys used in [[CP] RaisedGardenBeds - English/content.json](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BCP%5D%20RaisedGardenBeds%20-%20English/content.json). For example:
 ```js
-"Entries":
+"Fields":
 {
  "ja":
  {
   "item.name": "花畑",
   "item.name.variant": "{0} 花畑",
-  // . . .
+  // more translation strings . . .
  }
 }
 ```
@@ -419,11 +425,11 @@ To translate common text strings throughout the mod, you need to provide your la
 Example common translations: [[CP] RaisedGardenBeds - English/content.json](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BCP%5D%20RaisedGardenBeds%20-%20English/content.json)
 
 ### Item translations
-All objects from all RGB content packs can be translated in a single translation pack by targeting the `ItemTranslations` asset. Only object names have translations: all objects share the same generic description.
+All objects from all RGB content packs can be translated in a single translation pack by targeting the Item Translations asset (see [Targets](#targets)). Only object names have translations: all objects share the same generic description.
 
 To translate items from an RGB content pack, you need to use its `manifest.json` file's `UniqueID` field as a key within your language entry. For example, using [[RGB] RaisedGardenBeds/manifest.json](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BRGB%5D%20RaisedGardenBeds/manifest.json):
 ```js
-"Entries":
+"Fields":
 {
  "ja":
  {
