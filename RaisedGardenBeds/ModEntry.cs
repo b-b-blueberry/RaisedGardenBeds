@@ -17,11 +17,20 @@ namespace RaisedGardenBeds
 		internal static Config Config;
 
 		// definitions
+		/// <summary>
+		/// Shared object variant dictionary containing entries provided by the content pack, as well as some metadata about the content pack itself.
+		/// Entries are keyed by <see cref="OutdoorPot.VariantIndex".
+		/// </summary>
 		internal static Dictionary<string, Content.ContentData> ItemDefinitions = null;
 		/// <summary>
-		/// Shared spritesheet containing object icon, world sprite component, object breakage, and watered/unwatered soil sprites.
+		/// Shared object spritesheet dictionary containing object icon, world sprite component, object breakage, and watered/unwatered soil sprites.
+		/// Entries are keyed by <see cref="OutdoorPot.VariantIndex".
 		/// </summary>
 		internal static Dictionary<string, Texture2D> Sprites = null;
+		/// <summary>
+		/// List of parsed events loaded from <see cref="AssetManager.GameContentEventDataPath"./>
+		/// Event entries are keyed by event ID and conditions.
+		/// </summary>
 		internal static List<Dictionary<string, string>> EventData = null;
 
 		// others
@@ -282,7 +291,7 @@ namespace RaisedGardenBeds
 				int parentSheetIndex = 0;
 				foreach (KeyValuePair<string, Content.ContentData> entry in data)
 				{
-					string dataKey = $"{packKey}.{entry.Key}";
+					string variantKey = $"{packKey}.{entry.Key}";
 
 					// Parse temp values for each entry
 					entry.Value.ContentPack = contentPack;
@@ -290,7 +299,7 @@ namespace RaisedGardenBeds
 					entry.Value.SpriteKey = packKey;
 					entry.Value.SpriteIndex = parentSheetIndex++;
 
-					ItemDefinitions.Add(dataKey, entry.Value);
+					ItemDefinitions.Add(variantKey, entry.Value);
 				}
 
 				// To avoid having to keep many separate spritesheet images updated with any changes,
@@ -348,7 +357,7 @@ namespace RaisedGardenBeds
 			for (int i = 0; i < ItemDefinitions.Count; ++i)
 			{
 				string variantKey = ItemDefinitions.Keys.ElementAt(i);
-				string craftingRecipeName = OutdoorPot.GenericName + "." + variantKey;
+				string craftingRecipeName = OutdoorPot.GetNameFromVariantKey(variantKey: variantKey);
 				bool isAlreadyKnown = Game1.player.craftingRecipes.ContainsKey(craftingRecipeName);
 				bool isDefaultRecipe = ItemDefinitions[variantKey].RecipeIsDefault;
 				bool isInitialEventRecipe = string.IsNullOrEmpty(ItemDefinitions[variantKey].RecipeConditions);
@@ -418,7 +427,7 @@ namespace RaisedGardenBeds
 					? argQuantity
 					: defaultQuantity;
 
-			if (Game1.player.craftingRecipes.Keys.Count(r => r.StartsWith(OutdoorPot.GenericName)) < 1)
+			if (Game1.player.craftingRecipes.Keys.All(r => !r.StartsWith(OutdoorPot.GenericName)))
 			{
 				Log.D($"No raised bed recipes are unlocked! Use '{CommandPrefix}giveall' to add all varieties.");
 				return;

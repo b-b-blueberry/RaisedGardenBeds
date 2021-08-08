@@ -11,31 +11,32 @@ namespace RaisedGardenBeds
 {
 	public class NewRecipeMenu : IClickableMenu
 	{
-		public Dictionary<string, int> NewVarieties = new Dictionary<string, int>();
+		public List<string> VariantKeys;
 		public ClickableTextureComponent OkButton;
 		public ClickableTextureComponent StarIcon;
+
 		private MouseState _oldMouseState;
 		private int _timerBeforeStart;
 		private bool _informationUp;
 		private bool _isActive;
 
 		private readonly string _titleString;
-		private readonly string _craftingString;
-		private readonly List<string> _itemStrings;
+		private readonly Dictionary<string, string> _itemStrings;
+		private readonly Dictionary<string, KeyValuePair<string, int>> _itemSprites;
 
 		public static readonly Vector2 Dimensions = new Vector2(768, 512);
 		private const int OkButtonId = 101;
 
 
-		public NewRecipeMenu(List<string> newVarieties)
+		public NewRecipeMenu(List<string> variantKeys)
 			: base(x: 0,  y: 0, width: 0,  height: 0)
 		{
 			Log.T($"Opened end of night menu: {this.GetType().FullName}");
 
 			Game1.player.team.endOfNightStatus.UpdateState(ModEntry.EndOfNightState);
-			this.NewVarieties = newVarieties.ToDictionary(variety => variety, variety => OutdoorPot.GetParentSheetIndexFromName(variety));
+			this.VariantKeys = variantKeys;
 			this.width = (int)Dimensions.X;
-			this.height = ((int)Dimensions.Y / 2) + (this.NewVarieties.Count * Game1.smallestTileSize * 3 / 2 * Game1.pixelZoom);
+			this.height = ((int)Dimensions.Y / 2) + (this.VariantKeys.Count * Game1.smallestTileSize * 3 / 2 * Game1.pixelZoom);
 			this.OkButton = new ClickableTextureComponent(
 				bounds: Rectangle.Empty,
 				texture: Game1.mouseCursors,
@@ -52,14 +53,20 @@ namespace RaisedGardenBeds
 			this.gameWindowSizeChanged(Rectangle.Empty, Rectangle.Empty);
 			this.populateClickableComponentList();
 
+			string craftingString = Game1.content.LoadString("Strings\\UI:LearnedRecipe_crafting");
 			this._titleString = Translations.GetTranslation("menu.title.new");
-			this._craftingString = Game1.content.LoadString("Strings\\UI:LearnedRecipe_crafting");
-			this._itemStrings = this.NewVarieties
-				.Select(pair => 
-					Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe",
-						_craftingString,
-						Translations.GetTranslation($"item.name.{pair.Key}")))
-				.ToList();
+			this._itemStrings = 
+				this.VariantKeys
+				.ToDictionary(
+					vk => vk,
+					vk => Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe",
+						craftingString,
+						OutdoorPot.GetDisplayNameFromVariantKey(variantKey: vk)));
+			this._itemSprites = 
+				this.VariantKeys
+				.ToDictionary(
+					vk => vk,
+					vk => OutdoorPot.GetSpriteFromVariantKey(variantKey: vk));
 		}
 
 		protected override void cleanupBeforeExit()
@@ -333,14 +340,14 @@ namespace RaisedGardenBeds
 				int y = this.yPositionOnScreen;
 				int yOffset = IClickableMenu.spaceToClearTopBorder;
 				
-				for (int i = 0; i < this.NewVarieties.Count; ++i)
+				foreach (string variantKey in this.VariantKeys)
 				{
-					yOffset += (int)Game1.dialogueFont.MeasureString(_craftingString).Y + (paddingY * Game1.pixelZoom)
+					yOffset += (int)Game1.dialogueFont.MeasureString(_itemStrings[variantKey]).Y + (paddingY * Game1.pixelZoom)
 						 + ((Game1.smallestTileSize + paddingY) * 2);
-					int xOffset = -(int)((Game1.smallFont.MeasureString(_itemStrings[i]).X / 2) - (Game1.smallestTileSize * Game1.pixelZoom));
+					int xOffset = -(int)((Game1.smallFont.MeasureString(_itemStrings[variantKey]).X / 2) - (Game1.smallestTileSize * Game1.pixelZoom));
 					b.DrawString(
 						spriteFont: Game1.smallFont,
-						text: _itemStrings[i],
+						text: _itemStrings[variantKey],
 						position: new Vector2(
 							x + xOffset,
 							y + yOffset),
@@ -348,8 +355,8 @@ namespace RaisedGardenBeds
 
 					yOffset -= (Game1.smallestTileSize * Game1.pixelZoom);
 					b.Draw(
-						texture: Game1.bigCraftableSpriteSheet,
-						sourceRectangle: StardewValley.Object.getSourceRectForBigCraftable(this.NewVarieties[this.NewVarieties.Keys.ElementAt(i)]),
+						texture: ModEntry.Sprites[this._itemSprites[variantKey].Key],
+						sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this._itemSprites[variantKey].Value),
 						position: new Vector2(
 							x + xOffset - (Game1.smallestTileSize * 1.5f * Game1.pixelZoom),
 							y + yOffset),
@@ -391,7 +398,7 @@ namespace RaisedGardenBeds
 			}
 			if (variantKeys.Count > 0)
 			{
-				Game1.endOfNightMenus.Push(new NewRecipeMenu(newVarieties: variantKeys));
+				Game1.endOfNightMenus.Push(new NewRecipeMenu(variantKeys: variantKeys));
 			}
 		}
 	}

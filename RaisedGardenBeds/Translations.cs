@@ -7,8 +7,17 @@ namespace RaisedGardenBeds
 {
 	public static class Translations
 	{
-		internal static Dictionary<string, Dictionary<string, Dictionary<string, string>>> ItemTranslations = null;
+		/// <summary>
+		/// Translation definitions for all common UI strings.
+		/// </summary>
 		internal static Dictionary<string, Dictionary<string, string>> CommonTranslations = null;
+		/// <summary>
+		/// Translation definitions for all object display names.
+		/// </summary>
+		internal static Dictionary<string, Dictionary<string, Dictionary<string, string>>> ItemTranslations = null;
+		/// <summary>
+		/// Language code used if current language code contains no entries for a given translation.
+		/// </summary>
 		private static LocalizedContentManager.LanguageCode DefaultLanguageCode => LocalizedContentManager.LanguageCode.en;
 
 
@@ -38,6 +47,9 @@ namespace RaisedGardenBeds
 					: Translations.ItemTranslations.First().Value;
 		}
 
+		/// <summary>
+		/// Return the translated string for a given entry in the <see cref="Translations.CommonTranslations"/> dictionary.
+		/// </summary>
 		public static string GetTranslation(string key, object[] tokens = null)
 		{
 			string translation;
@@ -50,6 +62,10 @@ namespace RaisedGardenBeds
 			return tokens?.Length > 0 ? string.Format(translation, tokens) : translation;
 		}
 
+		/// <summary>
+		/// Return the display name for an item definition in the <see cref="Translations.ItemTranslations"/> dictionary.
+		/// </summary>
+		/// <param name="data">Item definition entry.</param>
 		public static string GetNameTranslation(Content.ContentData data)
 		{
 			string pack = data.ContentPack.Manifest.UniqueID;

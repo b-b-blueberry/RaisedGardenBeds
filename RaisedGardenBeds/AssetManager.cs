@@ -40,21 +40,47 @@ namespace RaisedGardenBeds
 		public T Load<T>(IAssetInfo asset)
 		{
 			if (asset.AssetNameEquals(GameContentEndOfNightSpritesPath))
+			{
 				return (T)(object)_helper.Content.Load
 					<Texture2D>
 					(LocalEndOfNightSpritesPath);
+			}
 			if (asset.AssetNameEquals(GameContentEventDataPath))
+			{
 				return (T)(object)_helper.Content.Load
 					<Dictionary<string, object>>
 					(LocalEventDataPath);
+			}
 			if (asset.AssetNameEquals(GameContentCommonTranslationDataPath))
-				return (T)(object)new Dictionary
+			{
+				var data = new Dictionary
 					<string, Dictionary<string, string>>
 					(StringComparer.InvariantCultureIgnoreCase);
+
+				// Populate all possible language codes for translation pack support
+				string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+				foreach (string key in keys)
+				{
+					data.Add(key, new Dictionary<string, string>());
+				}
+
+				return (T)(object)data;
+			}
 			if (asset.AssetNameEquals(GameContentItemTranslationDataPath))
-				return (T)(object)new Dictionary
+			{
+				var data = new Dictionary
 					<string, Dictionary<string, Dictionary<string, string>>>
 					(StringComparer.InvariantCultureIgnoreCase);
+
+				// Populate all possible language codes for translation pack support
+				string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+				foreach (string key in keys)
+				{
+					data.Add(key, new Dictionary<string, Dictionary<string, string>>());
+				}
+
+				return (T)(object)data;
+			}
 			return (T)(object)null;
 		}
 

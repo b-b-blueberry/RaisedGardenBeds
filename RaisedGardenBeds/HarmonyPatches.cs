@@ -1,8 +1,9 @@
-﻿using Harmony; // el diavolo
+﻿using HarmonyLib; // el diavolo nuevo
 using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.Menus;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RaisedGardenBeds
@@ -11,7 +12,7 @@ namespace RaisedGardenBeds
 	{
 		internal static void Patch(string id)
 		{
-			HarmonyInstance harmony = HarmonyInstance.Create(id);
+			Harmony harmony = new Harmony(id);
 
 			Log.T(typeof(HarmonyPatches).GetMethods().Take(typeof(HarmonyPatches).GetMethods().Count() - 4).Select(mi => mi.Name)
 				.Aggregate("Applying Harmony patches:", (str, s) => str + Environment.NewLine + s));
@@ -36,21 +37,62 @@ namespace RaisedGardenBeds
 
 			// Crafting
 			harmony.Patch(
-				original: AccessTools.Method(typeof(CraftingPage), "performHoverAction"),
-				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_PerformHoverAction_Postfix)));
+				original: AccessTools.Method(typeof(CraftingPage), "layoutRecipes"),
+				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_LayoutRecipes_Postfix)));
 			harmony.Patch(
 				original: AccessTools.Method(typeof(CraftingPage), "clickCraftingRecipe"),
 				prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingPage_ClickCraftingRecipe_Prefix)));
+			/*
 			harmony.Patch(
-				original: AccessTools.Method(typeof(CraftingRecipe), "getIndexOfMenuView"),
-				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingRecipe_GetIndexOfMenuView_Postfix)));
+				original: AccessTools.Method(typeof(CraftingRecipe), "drawMenuView"),
+				postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(CraftingRecipe_DrawMenuView_Postfix)));
+			*/
+
+			// DISPLAY NAME TRANSPILER
+			/*
+			var sub = AccessTools.Constructor(type: typeof(CraftingRecipe), parameters: new Type[] { typeof(string), typeof(bool) });
+			var dom = new HarmonyMethod(typeof(HarmonyPatches), nameof(Transpile_CraftingRecipeConstructor));
+			harmony.Patch(
+				original: sub,
+				transpiler: dom
+			);
+			*/
 		}
 
 		private static void ErrorHandler(Exception e)
 		{
 			Log.E($"{ModEntry.Instance.ModManifest.UniqueID} failed in harmony prefix.{Environment.NewLine}{e}");
 		}
+		/*
+		public static IEnumerable<CodeInstruction> Transpile_CraftingRecipeConstructor(ILGenerator gen, MethodBase original, IEnumerable<CodeInstruction> instructions)
+		{
+			foreach (CodeInstruction i in instructions)
+			{
+				if (i.opcode != OpCodes.Call || !(i.operand is MethodInfo method && method.Name == "get_CurrentLanguageCode"))
+				{
+					yield return i;
+				}
+				else
+				{
+					// Original: Call LocalizedContentManager.get_CurrentLanguageCode()
+					// Goal: Call HarmonyPatches.CheckDisplayName(int, bool)
 
+					yield return new CodeInstruction(OpCodes.Ldloc_1, null) { labels = i.labels };	// infoSplit
+					yield return new CodeInstruction(OpCodes.Ldlen, null);      // Length
+					yield return new CodeInstruction(OpCodes.Conv_I4, null);    // (int)
+
+					yield return new CodeInstruction(OpCodes.Ldarg_2, null);    // isCookingRecipe
+
+					yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), nameof(CheckDisplayName)));
+				}
+			}
+		}
+
+		public static int CheckDisplayName(int infoSplitLength, bool isCookingRecipe)
+		{
+			return infoSplitLength < (isCookingRecipe ? 5 : 6) ? 0 : 1;
+		}
+		*/
 		public static bool Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix(
 			ref bool __result,
 			GameLocation location,
@@ -148,16 +190,28 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// Replace crafting recipe hover logic to instead show garden bed display names for each variant.
+		/// Required to draw correct object sprites and strings in crafting menu.
+		/// Event handlers on StardewModdingAPI.Events.Display.MenuChanged were inconsistent.
 		/// </summary>
-		public static void CraftingPage_PerformHoverAction_Postfix(
-			CraftingRecipe ___hoverRecipe)
+		public static void CraftingPage_LayoutRecipes_Postfix(
+			CraftingPage __instance)
 		{
-			// Add display name in crafting pages
-			if (___hoverRecipe == null)
-				return;
-			if (___hoverRecipe.name.StartsWith(OutdoorPot.GenericName))
-				___hoverRecipe.DisplayName = OutdoorPot.GetDisplayNameFromName(___hoverRecipe.name);
+			__instance.pagesOfCraftingRecipes
+				.ForEach(dict => dict
+					.Where(pair => pair.Value.name.StartsWith(OutdoorPot.GenericName))
+					.ToList()
+					.ForEach(pair =>
+					{
+						string variantKey = OutdoorPot.GetVariantKeyFromName(name: pair.Value.name);
+
+						// Sprite
+						pair.Key.texture = ModEntry.Sprites[ModEntry.ItemDefinitions[variantKey].SpriteKey];
+						pair.Key.sourceRect = OutdoorPot.GetSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex);
+
+						// Strings
+						pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromName(pair.Value.name);
+						pair.Value.description = OutdoorPot.GetRawDescription();
+					}));
 		}
 
 		/// <summary>
@@ -212,18 +266,33 @@ namespace RaisedGardenBeds
 			}
 			return true;
 		}
-
+		/*
 		/// <summary>
-		/// Replace logic determining sprite index to draw from in crafting page to instead choose the garden bed variant sprite for this recipe.
+		/// 
 		/// </summary>
-		public static void CraftingRecipe_GetIndexOfMenuView_Postfix(
+		public static void CraftingRecipe_DrawMenuView_Postfix(
 			CraftingRecipe __instance,
-			ref int __result)
+			Microsoft.Xna.Framework.Graphics.SpriteBatch b,
+			int x,
+			int y,
+			float layerDepth)
 		{
 			if (__instance.name.StartsWith(OutdoorPot.GenericName))
 			{
-				__result = OutdoorPot.GetParentSheetIndexFromName(name: __instance.name);
+				string variantKey = OutdoorPot.GetVariantKeyFromName(name: __instance.name);
+				Utility.drawWithShadow(
+					b,
+					texture: ModEntry.Sprites[ModEntry.ItemDefinitions[variantKey].SpriteKey],
+					position: new Vector2(x, y),
+					sourceRect: OutdoorPot.GetSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex),
+					color: Color.White,
+					rotation: 0f,
+					origin: Vector2.Zero,
+					scale: Game1.pixelZoom,
+					flipped: false,
+					layerDepth: layerDepth);
 			}
 		}
+		*/
 	}
 }

@@ -43,7 +43,7 @@ namespace RaisedGardenBeds.Content
 		/// Number of days before the object will be considered for breakage at the end-of-season.
 		/// Value is not given as number of seasons the object will last to afford lenience for late placement.
 		/// </summary>
-		public int DaysToBreak { get; set; } = 44;
+		public int DaysToBreak { get; set; } = 0;
 
 		/********************
 		Code-generated values
@@ -95,9 +95,11 @@ namespace RaisedGardenBeds.Content
 			foreach (Dictionary<string, string> entry in data.RecipeIngredients)
 			{
 				int id = int.TryParse(entry["Object"], out int rawId)
+						// Base game objects must be referenced by ID
 						? rawId
+						// Json Assets objects may be referenced by name
 						: Game1.objectInformation.Keys.FirstOrDefault
-							(i => Game1.objectInformation[i].StartsWith(entry["Object"]));
+							(key => key >= 2000 && Game1.objectInformation[key].Split('/')[0] == entry["Object"]);
 				int quantity = int.Parse(entry["Count"]);
 				ingredients.Add($"{id} {quantity}");
 			}

@@ -36,17 +36,10 @@ namespace RaisedGardenBeds
 			set => this.displayName = value;
 		}
 		/// <summary>
-		/// Serialised wrapper for synchronised variant key string.
-		/// Required for unique object persistence.
+		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
 		/// </summary>
-		public string VariantKey
-		{
-			get => this._variantKey.Value;
-			set
-			{
-				this.SetForVariant(variantKey: value);
-			}
-		}
+		[XmlElement("VariantKey")]
+		public readonly NetString VariantKey = new NetString();
 
 		/******
 		Breakage
@@ -103,11 +96,6 @@ namespace RaisedGardenBeds
 		/// </summary>
 		[XmlIgnore]
 		public readonly NetArray<int, NetInt> Neighbours = new NetArray<int, NetInt>(size: 4);
-		/// <summary>
-		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
-		/// </summary>
-		[XmlIgnore]
-		private readonly NetString _variantKey = new NetString();
 		/// <summary>
 		/// Temporary one-tick variable used in <see cref="OutdoorPot.AdjustAllOnNextTick(GameLocation)"/> 
 		/// in order to indirectly provide the locations to check to the <see cref="AdjustAll(GameLocation)"/> method.
@@ -204,65 +192,56 @@ namespace RaisedGardenBeds
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
 
 			// this (string, Vector2) : IndoorPot (Vector2)
-			this.VariantKey = variantKey;
+			this.VariantKey.Value = variantKey;
+		}
+
+		protected override void initNetFields()
+		{
+			base.initNetFields();
+			this.NetFields.AddFields(this.VariantKey, this.SoilHeightAboveGround, this.BreakageStart, this.BreakageTimer, this.Neighbours);
+			this.VariantKey.fieldChangeEvent += this.Event_VariantKeyChanged;
 		}
 
 		/// <summary>
 		/// Reset all variant-specific values based on the variant key in this object's name.
 		/// </summary>
-		public void SetForVariant(string variantKey = null)
+		private void Event_VariantKeyChanged(NetString field, string oldValue, string newValue)
 		{
 			if (ModEntry.ItemDefinitions == null || !ModEntry.ItemDefinitions.Any())
 			{
 				Log.W($"Did not set {this.GetType().Name} ({this.Name}) variant: {nameof(ModEntry.ItemDefinitions)} null or empty.");
 				return;
 			}
-			bool resetBreakage = variantKey == null;
-			this._variantKey.Value = variantKey
-				?? this._variantKey.Value
+			bool resetBreakage = newValue == null;
+			this.VariantKey.Value = newValue
+				?? oldValue
 				?? ModEntry.ItemDefinitions.Keys.FirstOrDefault(key => key.StartsWith(ModEntry.Instance.ModManifest.Author))
 				?? ModEntry.ItemDefinitions.Keys.First();
-			this.SoilHeightAboveGround.Value = ModEntry.ItemDefinitions[this.VariantKey].SoilHeightAboveGround;
-			this.BreakageStart.Value = ModEntry.ItemDefinitions[this.VariantKey].DaysToBreak;
+			this.SoilHeightAboveGround.Value = ModEntry.ItemDefinitions[this.VariantKey.Value].SoilHeightAboveGround;
+			this.BreakageStart.Value = ModEntry.ItemDefinitions[this.VariantKey.Value].DaysToBreak;
+			if (this.BreakageStart.Value <= 0)
+			{
+				this.BreakageStart.Value = 99999;
+			}
 			this.DisplayName = this.loadDisplayName();
 			if (resetBreakage)
 			{
 				this.BreakageTimer.Value = this.BreakageStart.Value;
 			}
-			this.SpriteKey = ModEntry.ItemDefinitions[this.VariantKey].SpriteKey;
-			this.SpriteIndex = ModEntry.ItemDefinitions[this.VariantKey].SpriteIndex;
+			this.SpriteKey = ModEntry.ItemDefinitions[this.VariantKey.Value].SpriteKey;
+			this.SpriteIndex = ModEntry.ItemDefinitions[this.VariantKey.Value].SpriteIndex;
 		}
 
-		protected override void initNetFields()
+		public static KeyValuePair<string, int> GetSpriteFromVariantKey(string variantKey)
 		{
-			base.initNetFields();
-			this.NetFields.AddFields(this._variantKey, this.SoilHeightAboveGround, this.BreakageStart, this.BreakageTimer, this.Neighbours);
-		}
-
-		public static string GetVariantKeyFromParentSheetIndex(int index)
-		{
-			return ModEntry.ItemDefinitions.Keys.ToList().ElementAt(index - OutdoorPot.BaseParentSheetIndex);
-		}
-
-		public static string GetVariantKeyFromVariantIndex(int variantIndex)
-		{
-			return ModEntry.ItemDefinitions.Keys.ToList().ElementAt(variantIndex);
-		}
-
-		public static int GetVariantIndexFromName(string name)
-		{
-			return OutdoorPot.GetVariantIndexFromVariantKey(name.Split('.').Last());
+			return new KeyValuePair<string, int>(ModEntry.ItemDefinitions[variantKey].SpriteKey, ModEntry.ItemDefinitions[variantKey].SpriteIndex);
 		}
 
 		public static string GetVariantKeyFromName(string name)
 		{
-			string[] splitName = name.Split(new char[] { '.' }, 4);
-			return splitName.Length > 3 ? splitName.Last() : null;
-		}
-
-		public static int GetParentSheetIndexFromName(string name)
-		{
-			return OutdoorPot.GetVariantIndexFromName(name) + OutdoorPot.BaseParentSheetIndex;
+			int genericNameSplits = OutdoorPot.GenericName.Split('.').Length;
+			string[] splitName = name.Split(new char[] { '.' }, genericNameSplits + 1);
+			return splitName.Length > genericNameSplits ? splitName.Last() : null;
 		}
 
 		public static string GetDisplayNameFromName(string name)
@@ -290,21 +269,26 @@ namespace RaisedGardenBeds
 			return OutdoorPot.GetDisplayNameFromName(recipeName.Split('.').Last());
 		}
 
+		public static string GetRawDescription()
+		{
+			return Translations.GetTranslation($"item.description{(ModEntry.Config.CanBePlacedInBuildings ? ".indoors" : "")}");
+		}
+
 		protected override string loadDisplayName()
 		{
-			return OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey);
+			return OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey.Value);
 		}
 
 		public override string getDescription()
 		{
-			string description = Translations.GetTranslation($"item.description{(ModEntry.Config.CanBePlacedInBuildings ? ".indoors" : "")}");
+			string description = OutdoorPot.GetRawDescription();
 			return Game1.parseText(text: description, whichFont: Game1.smallFont, width: this.getDescriptionWidth());
 		}
 
 		public override bool placementAction(GameLocation location, int x, int y, Farmer who = null)
 		{
 			Vector2 tileLocation = new Vector2(x, y) / Game1.tileSize;
-			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey, tileLocation: tileLocation);
+			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: tileLocation);
 			OutdoorPot.AdjustWithNeighbours(location: location, tileLocation: tileLocation);
 			if (Game1.player.ActiveObject == this)
 			{
@@ -361,7 +345,7 @@ namespace RaisedGardenBeds
 
 					// refund debris
 					string recipeRaw = StardewValley.CraftingRecipe.craftingRecipes
-						[OutdoorPot.GetNameFromVariantKey(variantKey: this.VariantKey)];
+						[OutdoorPot.GetNameFromVariantKey(variantKey: this.VariantKey.Value)];
 					string[] recipeSplit = recipeRaw.Split('/')[0].Split(' ');
 					List<int> recipe = recipeSplit.ToList().ConvertAll(int.Parse);
 					int refundItem = recipe[0];
@@ -611,7 +595,7 @@ namespace RaisedGardenBeds
 			spriteBatch.Draw(
 				texture: ModEntry.Sprites[this.SpriteKey],
 				position: objectPosition,
-				sourceRectangle: this.GetSourceRectangle(),
+				sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this.SpriteIndex),
 				color: Color.White,
 				rotation: 0f,
 				origin: Vector2.Zero,
@@ -631,7 +615,7 @@ namespace RaisedGardenBeds
 			spriteBatch.Draw(
 				texture: ModEntry.Sprites[this.SpriteKey],
 				position: location + new Vector2(Game1.tileSize / 2, Game1.tileSize / 2),
-				sourceRectangle: this.GetSourceRectangle(),
+				sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this.SpriteIndex),
 				color: color * transparency,
 				rotation: 0f,
 				origin: new Vector2(Game1.smallestTileSize / 2, Game1.smallestTileSize),
@@ -680,7 +664,7 @@ namespace RaisedGardenBeds
 				spriteBatch.Draw(
 					texture: ModEntry.Sprites[this.SpriteKey],
 					destinationRectangle: destination,
-					sourceRectangle: this.GetSourceRectangle(),
+					sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this.SpriteIndex),
 					color: colour,
 					rotation: 0f,
 					origin: Vector2.Zero,
@@ -693,7 +677,7 @@ namespace RaisedGardenBeds
 				spriteBatch.Draw(
 					texture: ModEntry.Sprites[this.SpriteKey],
 					position: position + (new Vector2(Game1.smallestTileSize / 2, Game1.smallestTileSize) * Game1.pixelZoom),
-					sourceRectangle: this.GetSourceRectangle(),
+					sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this.SpriteIndex),
 					color: colour,
 					rotation: 0f,
 					origin: new Vector2(Game1.smallestTileSize / 2, Game1.smallestTileSize),
@@ -814,12 +798,12 @@ namespace RaisedGardenBeds
 
 		public override Item getOne()
 		{
-			return new OutdoorPot(variantKey: this.VariantKey, tileLocation: this.TileLocation);
+			return new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: this.TileLocation);
 		}
 
-		public Rectangle GetSourceRectangle()
+		public static Rectangle GetSourceRectangle(int spriteIndex)
 		{
-			return new Rectangle(Game1.smallestTileSize * OutdoorPot.PreviewIndexInSheet, this.SpriteIndex * Game1.smallestTileSize * 2, Game1.smallestTileSize, Game1.smallestTileSize * 2);
+			return new Rectangle(Game1.smallestTileSize * OutdoorPot.PreviewIndexInSheet, spriteIndex * Game1.smallestTileSize * 2, Game1.smallestTileSize, Game1.smallestTileSize * 2);
 		}
 
 		public bool CanPlantHere(Item item)
@@ -942,7 +926,7 @@ namespace RaisedGardenBeds
 		public static void ResetAll(GameLocation specificLocation = null)
 		{
 			foreach (GameLocation location in specificLocation != null ? new [] { specificLocation } : OutdoorPot.GetValidLocations())
-				location.Objects.Values.OfType<OutdoorPot>().ToList().ForEach(o => o.SetForVariant());
+				location.Objects.Values.OfType<OutdoorPot>().ToList().ForEach(o => o.VariantKey.Value = null);
 		}
 
 		/// <summary>

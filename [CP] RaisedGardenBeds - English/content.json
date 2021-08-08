@@ -1,15 +1,12 @@
 {
 	"Format": "1.23.0",
-	"Changes":
-	[
+	"Changes": [
 		{
-			"LogName": "RaisedGardenBeds Common Translation: English",
+			"LogName": "RaisedGardenBeds Common Translations: English",
 			"Action": "EditData",
 			"Target": "Mods/blueberry.rgb.Assets/CommonTranslations",
-			"Entries": 
-			{
-				"en":
-				{
+			"Fields": {
+				"en": {
 					"item.name": "Garden Bed",
 					"item.name.variant": "{0} Garden Bed",
 
@@ -40,15 +37,12 @@
 			}
 		},
 		{
-			"LogName": "RaisedGardenBeds Item Translation: English",
+			"LogName": "RaisedGardenBeds Item Translations: English",
 			"Action": "EditData",
 			"Target": "Mods/blueberry.rgb.Assets/ItemTranslations",
-			"Entries": 
-			{
-				"en":
-				{
-					"blueberry.RaisedGardenBeds.RGB":
-					{
+			"Fields": {
+				"en": {
+					"blueberry.RaisedGardenBeds.RGB": {
 						"Wood": "Wood",
 						"Stone": "Stone",
 						"Brick": "Brick",
