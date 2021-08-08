@@ -107,7 +107,8 @@ You can define as many object variants as you like in a single content file, wit
     ],
     "RecipeCraftedCount": 1,
     "RecipeIsDefault": false,
-    "RecipeConditions": null
+    "RecipeConditions": null,
+    "CanBeArranged": false
     // The omitted DaysToBreak field will use its default value.
   },
   "Dirt": {
@@ -243,6 +244,23 @@ Default: `null`
 
 </td>
 </tr>
+<tr>
+<td>
+
+`CanBeArranged`
+
+_(Optional)_
+
+</td>
+<td>
+
+Determines whether this object will form large arrangements with its neighbours. Can be set to `false` for objects which stylistically need to be single.
+
+Values: `true`, `false`  
+Default: `true`
+
+</td>
+</tr>
 </table>
 
 ### Sprites
@@ -258,25 +276,27 @@ An example spritesheet using the reference template, below, with multiple varian
 
 ![](https://i.imgur.com/2YAwqGo.png)
 
-The spritesheet is split into 20 tiles of 16x16 pixels each; 10 columns and 2 rows. As the object sprite is rendered in the world in parts, each tile is used for a different part. Some parts are left blank.  
-* AB: The object sprite as it appears when placed single, also used for outside corners.
-* C: Blank.
-* D: Vertical edges for tall arrangements.
-* EF: Horizontal edges for wide arrangements.
-* G: Upward inside edges.
-* H: Blank.
-* I: Hoe dirt sprite, unwatered.
-* J: Hoe dirt sprite, watered.
-* K: Downward inside edges.
-* L: Blank.
-* M: Blank.
-* N: Right side corner for wide arrangements.
-* OP: Blank.
-* QR: Broken object sprite.
-* ST: Reserved; leave blank.
+The spritesheet is split into 20 tiles of 16x16 pixels each; 10 columns and 2 rows. As the object sprite is rendered in the world in quarters, each tile is used for a different purpose. Some tiles are intentionally left blank.  
+* `AB`: The object sprite as it appears when placed single, also used for outside corners.
+* `C`: Blank.
+* `D`: Vertical edges for tall arrangements.
+* `EF`: Horizontal edges for wide arrangements.
+* `G`: Upward inside edges.
+* `H`: Blank.
+* `I`: Hoe dirt sprite, unwatered.
+* `J`: Hoe dirt sprite, watered.
+* `K`: Downward inside edges.
+* `L`: Blank.
+* `M`: Blank.
+* `N`: Right side corner for wide arrangements.
+* `OP`: Blank.
+* `QR`: Broken object sprite.
+* `ST`: Reserved; leave blank.
 
-Creating a spritesheet that aligns and tesselates correctly can take some trial-and-error, so it might take a few tries to get your sprites perfect.  
-Blank sprites are still rendered, which you can use to your advantage by playing around with unique details to appear in certain parts of your object sprite.
+Creating a spritesheet that aligns, arranges, and tesselates correctly can take some trial-and-error, so it might take a few tries to get your sprites perfect.  
+Blank tile sprites are still rendered, which you can use to your advantage by playing around with unique details to appear in certain parts of your object sprite.
+
+If your item definition includes the field `CanBeArranged` `false`, you only need to complete the `AB`, `I`, `J`, and `QR` tiles in the template.
 
 Example sprites: [[RGB] RaisedGardenBeds/sprites.png](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BRGB%5D%20RaisedGardenBeds/sprites.png)
 
