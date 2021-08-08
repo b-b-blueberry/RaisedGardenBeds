@@ -44,6 +44,10 @@ namespace RaisedGardenBeds
 		/// Value is not given as number of seasons the object will last to afford lenience for late placement.
 		/// </summary>
 		public int DaysToBreak { get; set; } = 0;
+		/// <summary>
+		/// Whether this object will build up with others to form large arrangements.
+		/// </summary>
+		public bool CanBeArranged { get; set; } = true;
 
 		/********************
 		Code-generated values

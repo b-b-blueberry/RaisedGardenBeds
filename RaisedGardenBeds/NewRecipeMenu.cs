@@ -356,7 +356,7 @@ namespace RaisedGardenBeds
 					yOffset -= (Game1.smallestTileSize * Game1.pixelZoom);
 					b.Draw(
 						texture: ModEntry.Sprites[this._itemSprites[variantKey].Key],
-						sourceRectangle: OutdoorPot.GetSourceRectangle(spriteIndex: this._itemSprites[variantKey].Value),
+						sourceRectangle: OutdoorPot.GetSpriteSourceRectangle(spriteIndex: this._itemSprites[variantKey].Value),
 						position: new Vector2(
 							x + xOffset - (Game1.smallestTileSize * 1.5f * Game1.pixelZoom),
 							y + yOffset),

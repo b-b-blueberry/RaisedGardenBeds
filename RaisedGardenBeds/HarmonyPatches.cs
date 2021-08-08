@@ -105,7 +105,7 @@ namespace RaisedGardenBeds
 				Vector2 tileLocation = new Vector2(x / Game1.tileSize, y / Game1.tileSize);
 				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 				{
-					if (!OutdoorPot.IsItemPlantable(item) && op.IsOpenForPlacement())
+					if (!OutdoorPot.CanAcceptItemOrSeed(item: item) && OutdoorPot.CanAcceptAnything(op: op))
 					{
 						__result = op.performObjectDropInAction(dropInItem: (StardewValley.Object)item, probe: true, who: Game1.player);
 					}
@@ -132,7 +132,7 @@ namespace RaisedGardenBeds
 			{
 				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 				{
-					if (OutdoorPot.IsItemPlantable(item) && op.CanPlantHere(item) && op.IsOpenForPlacement())
+					if (OutdoorPot.CanAcceptItemOrSeed(item) && OutdoorPot.CanAcceptSeed(item: item, op: op) && OutdoorPot.CanAcceptAnything(op: op))
 					{
 						return true;
 					}
@@ -155,7 +155,7 @@ namespace RaisedGardenBeds
 				if (ModEntry.Config.SprinklersEnabled
 					&& location.Objects.TryGetValue(tile, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 				{
-					if (op.IsOpenForPlacement(ignoreCrops: true))
+					if (OutdoorPot.CanAcceptAnything(op: op, ignoreCrops: true))
 					{
 						op.Water();
 					}
@@ -180,9 +180,9 @@ namespace RaisedGardenBeds
 		{
 			if (__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 			{
-				bool isPlantable = OutdoorPot.IsItemPlantable(toPlace)
+				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(toPlace)
 					&& op.hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19);
-				if (op.IsOpenForPlacement() && isPlantable)
+				if (OutdoorPot.CanAcceptAnything(op: op) && isPlantable)
 				{
 					__result = false;
 				}
@@ -206,7 +206,7 @@ namespace RaisedGardenBeds
 
 						// Sprite
 						pair.Key.texture = ModEntry.Sprites[ModEntry.ItemDefinitions[variantKey].SpriteKey];
-						pair.Key.sourceRect = OutdoorPot.GetSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex);
+						pair.Key.sourceRect = OutdoorPot.GetSpriteSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex);
 
 						// Strings
 						pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromName(pair.Value.name);

@@ -35,23 +35,23 @@ namespace RaisedGardenBeds
 
 		// others
 		internal static int ModUpdateKey;
-		internal static int EventRootId => ModUpdateKey * 10000;
+		internal static int EventRootId => ModEntry.ModUpdateKey * 10000;
 		internal const string CommandPrefix = "rgb.";
 		internal const string EndOfNightState = "blueberry.rgb.endofnightmenu";
 
 
 		public override void Entry(IModHelper helper)
 		{
-			Instance = this;
-			Config = helper.ReadConfig<Config>();
-			ModUpdateKey = int.Parse(ModManifest.UpdateKeys.First().Split(':')[1]);
+			ModEntry.Instance = this;
+			ModEntry.Config = helper.ReadConfig<Config>();
+			ModEntry.ModUpdateKey = int.Parse(this.ModManifest.UpdateKeys.First().Split(':')[1]);
 
 			helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
 		}
 
 		private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
 		{
-			Helper.Events.GameLoop.OneSecondUpdateTicked += this.Event_LoadLate;
+			this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.Event_LoadLate;
 		}
 
 		private void GameLoop_SaveLoaded(object sender, SaveLoadedEventArgs e)
@@ -77,7 +77,7 @@ namespace RaisedGardenBeds
 		private void GameLoop_DayEnding(object sender, DayEndingEventArgs e)
 		{
 			// Break ready objects at the start of each season
-			if (Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == 28)
+			if (ModEntry.Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == 28)
 			{
 				Log.T($"Performing end-of-season breakage: Y{Game1.year}/M{1 + Utility.getSeasonNumber(Game1.currentSeason)}/D{Game1.dayOfMonth}");
 				OutdoorPot.BreakAll();
@@ -90,9 +90,9 @@ namespace RaisedGardenBeds
 			{
 				Log.T("Invalidating assets on connected for multiplayer peer.");
 
-				Helper.Content.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
-				Helper.Content.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
-				Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
+				this.Helper.Content.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
+				this.Helper.Content.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
+				this.Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
 			}
 		}
 
@@ -102,7 +102,7 @@ namespace RaisedGardenBeds
 			List<string> newVarieties = AddNewAvailableRecipes();
 			if (newVarieties.Count > 0)
 			{
-				Log.T($"Unlocked {newVarieties.Count} new recipes:{newVarieties.Aggregate(string.Empty, (str, s) => $"{str}{Environment.NewLine}{s}")}");
+				Log.T(newVarieties.Aggregate($"Unlocked {newVarieties.Count} new recipes:", (str, s) => $"{str}{Environment.NewLine}{s}"));
 
 				NewRecipeMenu.Push(newVarieties);
 			}
@@ -110,7 +110,7 @@ namespace RaisedGardenBeds
 
 		private void Event_LoadLate(object sender, OneSecondUpdateTickedEventArgs e)
 		{
-			Helper.Events.GameLoop.OneSecondUpdateTicked -= this.Event_LoadLate;
+			this.Helper.Events.GameLoop.OneSecondUpdateTicked -= this.Event_LoadLate;
 
 			if (this.LoadAPIs())
 			{
@@ -121,7 +121,7 @@ namespace RaisedGardenBeds
 		private bool LoadAPIs()
 		{
 			Log.T("Loading mod-provided APIs.");
-			ISpaceCoreAPI spacecoreAPI = Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
+			ISpaceCoreAPI spacecoreAPI = this.Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
 			if (spacecoreAPI == null)
 			{
 				// Skip all mod behaviours if we fail to load the objects
@@ -139,9 +139,9 @@ namespace RaisedGardenBeds
 			Log.T("Initialising mod data.");
 
 			// Assets
-			AssetManager assetManager = new AssetManager(helper: Helper);
-			Helper.Content.AssetLoaders.Add(assetManager);
-			Helper.Content.AssetEditors.Add(assetManager);
+			AssetManager assetManager = new AssetManager(helper: this.Helper);
+			this.Helper.Content.AssetLoaders.Add(assetManager);
+			this.Helper.Content.AssetEditors.Add(assetManager);
 
 			// Content
 			Translations.LoadTranslationPacks();
@@ -149,47 +149,47 @@ namespace RaisedGardenBeds
 			this.AddGenericModConfigMenu();
 
 			// Patches
-			HarmonyPatches.Patch(id: ModManifest.UniqueID);
+			HarmonyPatches.Patch(id: this.ModManifest.UniqueID);
 
 			// Events
-			Helper.Events.Specialized.LoadStageChanged += this.Specialized_LoadStageChanged;
-			Helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
-			Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
-			Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
+			this.Helper.Events.Specialized.LoadStageChanged += this.Specialized_LoadStageChanged;
+			this.Helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
+			this.Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
+			this.Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
 
 			// Console commands
-			Helper.ConsoleCommands.Add(
-				name: CommandPrefix + "eventget",
+			this.Helper.ConsoleCommands.Add(
+				name: ModEntry.CommandPrefix + "eventget",
 				documentation: $"Check if event has been seen.{Environment.NewLine}Provide event ID, default to root event.",
 				callback: Cmd_IsEventSeen);
-			Helper.ConsoleCommands.Add(
-				name: CommandPrefix + "eventset",
+			this.Helper.ConsoleCommands.Add(
+				name: ModEntry.CommandPrefix + "eventset",
 				documentation: $"Set state for having seen any event.{Environment.NewLine}Provide event ID, default to root event.",
 				callback: Cmd_ToggleEventSeen);
-			Helper.ConsoleCommands.Add(
-				name: CommandPrefix + "give",
+			this.Helper.ConsoleCommands.Add(
+				name: ModEntry.CommandPrefix + "give",
 				documentation: $"Give several unlocked raised beds.{Environment.NewLine}Has no effect if none are available.",
 				callback: Cmd_Give);
-			Helper.ConsoleCommands.Add(
-				name: CommandPrefix + "giveall",
+			this.Helper.ConsoleCommands.Add(
+				name: ModEntry.CommandPrefix + "giveall",
 				documentation: "Give several of all varieties of raised beds.",
 				callback: Cmd_GiveAll);
 		}
 
 		private void AddGenericModConfigMenu()
 		{
-			IGenericModConfigMenuAPI modconfigAPI = Helper.ModRegistry.GetApi<IGenericModConfigMenuAPI>("spacechase0.GenericModConfigMenu");
+			IGenericModConfigMenuAPI modconfigAPI = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuAPI>("spacechase0.GenericModConfigMenu");
 			if (modconfigAPI != null)
 			{
 				modconfigAPI.RegisterModConfig(
-					mod: ModManifest,
-					revertToDefault: () => Config = new Config(),
-					saveToFile: () => Helper.WriteConfig(Config));
+					mod: this.ModManifest,
+					revertToDefault: () => ModEntry.Config = new Config(),
+					saveToFile: () => this.Helper.WriteConfig(ModEntry.Config));
 				modconfigAPI.SetDefaultIngameOptinValue(
-					mod: ModManifest,
+					mod: this.ModManifest,
 					optedIn: true);
-				System.Reflection.PropertyInfo[] properties = Config
+				System.Reflection.PropertyInfo[] properties = ModEntry.Config
 					.GetType()
 					.GetProperties()
 					.Where(p => p.PropertyType == typeof(bool))
@@ -199,20 +199,20 @@ namespace RaisedGardenBeds
 					string key = property.Name.ToLower();
 					string description = Translations.GetTranslation($"config.{key}.description");
 					modconfigAPI.RegisterSimpleOption(
-						mod: ModManifest,
+						mod: this.ModManifest,
 						optionName: Translations.GetTranslation($"config.{key}.name"),
 						optionDesc: string.IsNullOrWhiteSpace(description) ? null : description,
-						optionGet: () => (bool)property.GetValue(Config),
-						optionSet: (bool value) => property.SetValue(Config, value: value));
+						optionGet: () => (bool)property.GetValue(ModEntry.Config),
+						optionSet: (bool value) => property.SetValue(ModEntry.Config, value: value));
 				}
 			}
 		}
 
 		private void SaveLoadedBehaviours()
 		{
-			Log.T($"Adding endOfNightStatus definition: {EndOfNightState}");
+			Log.T($"Adding endOfNightStatus definition: {ModEntry.EndOfNightState}");
 			Game1.player.team.endOfNightStatus.AddSpriteDefinition(
-				key: EndOfNightState,
+				key: ModEntry.EndOfNightState,
 				file: AssetManager.GameContentEndOfNightSpritesPath,
 				x: 48, y: 0, width: 16, height: 16);
 
@@ -223,20 +223,20 @@ namespace RaisedGardenBeds
 			// Reinitialise objects to recalculate XmlIgnore values
 			if (Context.IsMainPlayer)
 			{
-				OutdoorPot.AdjustAll();
+				OutdoorPot.ArrangeAll();
 			}
 			else
 			{
-				OutdoorPot.AdjustAllOnNextTick();
+				OutdoorPot.ArrangeAllOnNextTick();
 			}
 		}
 
 		public void LoadContentPacks()
 		{
-			ItemDefinitions = new Dictionary<string, ItemDefinition>();
-			Sprites = new Dictionary<string, Texture2D>();
+			ModEntry.ItemDefinitions = new Dictionary<string, ItemDefinition>();
+			ModEntry.Sprites = new Dictionary<string, Texture2D>();
 
-			List<IContentPack> contentPacks = Helper.ContentPacks.GetOwned().ToList();
+			List<IContentPack> contentPacks = this.Helper.ContentPacks.GetOwned().ToList();
 			foreach (IContentPack contentPack in contentPacks)
 			{
 				string packKey = contentPack.Manifest.UniqueID;
@@ -299,7 +299,13 @@ namespace RaisedGardenBeds
 					entry.Value.SpriteKey = packKey;
 					entry.Value.SpriteIndex = parentSheetIndex++;
 
-					ItemDefinitions.Add(variantKey, entry.Value);
+					// Set default DaysToBreak values to unbreakable
+					if (entry.Value.DaysToBreak <= 0)
+					{
+						entry.Value.DaysToBreak = 99999;
+					}
+
+					ModEntry.ItemDefinitions.Add(variantKey, entry.Value);
 				}
 
 				// To avoid having to keep many separate spritesheet images updated with any changes,
@@ -316,7 +322,7 @@ namespace RaisedGardenBeds
 				// have the variant's unique soil sprite change when watered.
 				if (data.Count > 0)
 				{
-					IAssetData asset = Helper.Content.GetPatchHelper(sprites);
+					IAssetData asset = this.Helper.Content.GetPatchHelper(sprites);
 					Rectangle destination = Rectangle.Empty;
 					Rectangle source;
 					int width = Game1.smallestTileSize;
@@ -341,27 +347,27 @@ namespace RaisedGardenBeds
 						targetArea: destination,
 						patchMode: PatchMode.Overlay);
 				}
-				Sprites.Add(packKey, sprites);
+				ModEntry.Sprites.Add(packKey, sprites);
 			}
 
-			Log.T($"Loaded {contentPacks.Count} content pack(s) containing {ItemDefinitions.Count} valid objects.");
+			Log.T($"Loaded {contentPacks.Count} content pack(s) containing {ModEntry.ItemDefinitions.Count} valid objects.");
 		}
 
 		public static void AddDefaultRecipes()
 		{
 			List<string> recipesToAdd = new List<string>();
 			int[] eventsSeen = Game1.player.eventsSeen.ToArray();
-			string precondition = $"{EventRootId}/{EventData[0]["Conditions"]}";
+			string precondition = $"{ModEntry.EventRootId}/{ModEntry.EventData[0]["Conditions"]}";
 			int rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
-			bool hasOrWillSeeRootEvent = eventsSeen.Contains(EventRootId) || rootEventReady != -1;
-			for (int i = 0; i < ItemDefinitions.Count; ++i)
+			bool hasOrWillSeeRootEvent = eventsSeen.Contains(ModEntry.EventRootId) || rootEventReady != -1;
+			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
 			{
-				string variantKey = ItemDefinitions.Keys.ElementAt(i);
+				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
 				string craftingRecipeName = OutdoorPot.GetNameFromVariantKey(variantKey: variantKey);
 				bool isAlreadyKnown = Game1.player.craftingRecipes.ContainsKey(craftingRecipeName);
-				bool isDefaultRecipe = ItemDefinitions[variantKey].RecipeIsDefault;
-				bool isInitialEventRecipe = string.IsNullOrEmpty(ItemDefinitions[variantKey].RecipeConditions);
-				bool shouldAdd = Config.RecipesAlwaysAvailable || isDefaultRecipe || (hasOrWillSeeRootEvent && isInitialEventRecipe);
+				bool isDefaultRecipe = ModEntry.ItemDefinitions[variantKey].RecipeIsDefault;
+				bool isInitialEventRecipe = string.IsNullOrEmpty(ModEntry.ItemDefinitions[variantKey].RecipeConditions);
+				bool shouldAdd = ModEntry.Config.RecipesAlwaysAvailable || isDefaultRecipe || (hasOrWillSeeRootEvent && isInitialEventRecipe);
 
 				if (!isAlreadyKnown && shouldAdd)
 				{
@@ -382,20 +388,20 @@ namespace RaisedGardenBeds
 		public static List<string> AddNewAvailableRecipes()
 		{
 			List<string> newVariants = new List<string>();
-			for (int i = 0; i < ItemDefinitions.Count; ++i)
+			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
 			{
-				string variantKey = ItemDefinitions.Keys.ElementAt(i);
+				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
 				string itemName = OutdoorPot.GetNameFromVariantKey(variantKey);
 
 				if (Game1.player.craftingRecipes.ContainsKey(itemName)
-					|| string.IsNullOrEmpty(ItemDefinitions[variantKey].RecipeConditions)
-					|| !Game1.player.eventsSeen.Contains(EventRootId))
+					|| string.IsNullOrEmpty(ModEntry.ItemDefinitions[variantKey].RecipeConditions)
+					|| !Game1.player.eventsSeen.Contains(ModEntry.EventRootId))
 				{
 					continue;
 				}
 
-				int eventID = EventRootId + i;
-				string eventKey = $"{eventID.ToString()}/{ItemDefinitions[variantKey].RecipeConditions}";
+				int eventID = ModEntry.EventRootId + i;
+				string eventKey = $"{eventID.ToString()}/{ModEntry.ItemDefinitions[variantKey].RecipeConditions}";
 				int precondition = Game1.getFarm().checkEventPrecondition(eventKey);
 				if (precondition != -1)
 				{
@@ -429,11 +435,11 @@ namespace RaisedGardenBeds
 
 			if (Game1.player.craftingRecipes.Keys.All(r => !r.StartsWith(OutdoorPot.GenericName)))
 			{
-				Log.D($"No raised bed recipes are unlocked! Use '{CommandPrefix}giveall' to add all varieties.");
+				Log.D($"No raised bed recipes are unlocked! Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
 				return;
 			}
 
-			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{CommandPrefix}giveall' to add all varieties.");
+			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
 
 			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys
 				.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName));
@@ -452,9 +458,9 @@ namespace RaisedGardenBeds
 					? argQuantity
 					: defaultQuantity;
 
-			Log.D($"Adding {quantity} of all raised beds. Use '{CommandPrefix}give' to add unlocked varieties only.");
+			Log.D($"Adding {quantity} of all raised beds. Use '{ModEntry.CommandPrefix}give' to add unlocked varieties only.");
 
-			foreach (string variantKey in ItemDefinitions.Keys)
+			foreach (string variantKey in ModEntry.ItemDefinitions.Keys)
 			{
 				ModEntry.Give(variantKey: variantKey, quantity: quantity);
 			}
@@ -464,7 +470,7 @@ namespace RaisedGardenBeds
 		{
 			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
 				? argId
-				: EventRootId;
+				: ModEntry.EventRootId;
 
 			Log.D($"Player {(Game1.player.eventsSeen.Contains(eventId) ? "has" : "has not")} seen event {eventId}.");
 		}
@@ -473,7 +479,7 @@ namespace RaisedGardenBeds
 		{
 			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
 				? argId
-				: EventRootId;
+				: ModEntry.EventRootId;
 			if (Game1.player.eventsSeen.Contains(eventId))
 			{
 				Game1.player.eventsSeen.Remove(eventId);
