@@ -66,7 +66,7 @@ namespace RaisedGardenBeds
 		/// Return the display name for an item definition in the <see cref="Translations.ItemTranslations"/> dictionary.
 		/// </summary>
 		/// <param name="data">Item definition entry.</param>
-		public static string GetNameTranslation(Content.ContentData data)
+		public static string GetNameTranslation(ItemDefinition data)
 		{
 			string pack = data.ContentPack.Manifest.UniqueID;
 			string item = data.LocalName;

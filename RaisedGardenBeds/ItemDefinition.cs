@@ -4,9 +4,9 @@ using StardewValley;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RaisedGardenBeds.Content
+namespace RaisedGardenBeds
 {
-	public class ContentData
+	public class ItemDefinition
 	{
 		/***************
 		Required entries
@@ -71,7 +71,7 @@ namespace RaisedGardenBeds.Content
 		[JsonIgnore]
 		public int SpriteIndex { get; set; }
 		/// <summary>
-		/// The <see cref="ContentData.RecipeIngredients"/> dictionary aggregated to a string
+		/// The <see cref="ItemDefinition.RecipeIngredients"/> dictionary aggregated to a string
 		/// with all "Object" fields parsed to their equivalent <see cref="StardewValley.Object.ParentSheetIndex"/>.
 		/// Has no entry in the content data file.
 		/// </summary>
@@ -89,7 +89,7 @@ namespace RaisedGardenBeds.Content
 		Internal methods
 		***************/
 
-		internal static string ParseRecipeIngredients(ContentData data)
+		internal static string ParseRecipeIngredients(ItemDefinition data)
 		{
 			List<string> ingredients = new List<string>();
 			foreach (Dictionary<string, string> entry in data.RecipeIngredients)

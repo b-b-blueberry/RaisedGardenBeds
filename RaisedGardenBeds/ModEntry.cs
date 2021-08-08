@@ -21,7 +21,7 @@ namespace RaisedGardenBeds
 		/// Shared object variant dictionary containing entries provided by the content pack, as well as some metadata about the content pack itself.
 		/// Entries are keyed by <see cref="OutdoorPot.VariantIndex".
 		/// </summary>
-		internal static Dictionary<string, Content.ContentData> ItemDefinitions = null;
+		internal static Dictionary<string, ItemDefinition> ItemDefinitions = null;
 		/// <summary>
 		/// Shared object spritesheet dictionary containing object icon, world sprite component, object breakage, and watered/unwatered soil sprites.
 		/// Entries are keyed by <see cref="OutdoorPot.VariantIndex".
@@ -233,7 +233,7 @@ namespace RaisedGardenBeds
 
 		public void LoadContentPacks()
 		{
-			ItemDefinitions = new Dictionary<string, Content.ContentData>();
+			ItemDefinitions = new Dictionary<string, ItemDefinition>();
 			Sprites = new Dictionary<string, Texture2D>();
 
 			List<IContentPack> contentPacks = Helper.ContentPacks.GetOwned().ToList();
@@ -242,10 +242,10 @@ namespace RaisedGardenBeds
 				string packKey = contentPack.Manifest.UniqueID;
 				var sprites = contentPack.LoadAsset
 					<Texture2D>
-					(Content.ContentData.SpritesFile);
+					(ItemDefinition.SpritesFile);
 				var data = contentPack.ReadJsonFile
-					<Dictionary<string, Content.ContentData>>
-					(Content.ContentData.DefinitionsFile);
+					<Dictionary<string, ItemDefinition>>
+					(ItemDefinition.DefinitionsFile);
 
 				// For some quality assurance, we check that there are an equal number of entries in the
 				// ItemDefinitions dictionary as there are sprites in the shared framework spritesheet.
@@ -289,7 +289,7 @@ namespace RaisedGardenBeds
 				}
 
 				int parentSheetIndex = 0;
-				foreach (KeyValuePair<string, Content.ContentData> entry in data)
+				foreach (KeyValuePair<string, ItemDefinition> entry in data)
 				{
 					string variantKey = $"{packKey}.{entry.Key}";
 

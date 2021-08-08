@@ -168,7 +168,7 @@ namespace RaisedGardenBeds
 				// Patch in dummy object entries after generic object entry
 				for (int i = 1; i < ModEntry.ItemDefinitions.Count; ++i)
 				{
-					Content.ContentData d = ModEntry.ItemDefinitions[ModEntry.ItemDefinitions.Keys.ElementAt(i)];
+					ItemDefinition d = ModEntry.ItemDefinitions[ModEntry.ItemDefinitions.Keys.ElementAt(i)];
 					name = Translations.GetNameTranslation(data: d);
 					fields = data[id].Split('/');
 					fields[4] = description;
@@ -194,11 +194,11 @@ namespace RaisedGardenBeds
 
 				// Add crafting recipes for all object variants
 				var data = asset.AsDictionary<string, string>().Data;
-				foreach (KeyValuePair<string, Content.ContentData> idAndFields in ModEntry.ItemDefinitions)
+				foreach (KeyValuePair<string, ItemDefinition> idAndFields in ModEntry.ItemDefinitions)
 				{
 					string[] newFields = new string[]
 					{	// Crafting ingredients:
-						Content.ContentData.ParseRecipeIngredients(data: idAndFields.Value),
+						ItemDefinition.ParseRecipeIngredients(data: idAndFields.Value),
 						// Unused field:
 						"blue berry",
 						// Crafted item ID and quantity:
