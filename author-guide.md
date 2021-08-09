@@ -129,7 +129,7 @@ You can define as many object variants as you like in a single content file, wit
 Example content file: [[RGB] RaisedGardenBeds/content.json](https://github.com/b-b-blueberry/RaisedGardenBeds/blob/master/%5BRGB%5D%20RaisedGardenBeds/content.json)
 
 ### Fields
-Each entry in the content file can contain up to 6 fields, of which 4 are optional and will default to some basic value if not included:
+Each entry in the content file can contain up to 6 fields, of which 2 are required. Omitted optional fields will default to some basic value if not included.
 <table>
 <tr>
 <th>field</th>
