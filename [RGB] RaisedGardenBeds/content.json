@@ -3,7 +3,7 @@
 		"SoilHeightAboveGround": 8,
 		"RecipeIngredients": [
 			{
-				"Object": 388, // Wood
+				"Object": "Wood",
 				"Count": 20
 			}
 		],
@@ -16,7 +16,7 @@
 		"SoilHeightAboveGround": 8,
 		"RecipeIngredients": [
 			{
-				"Object": 390, // Stone
+				"Object": "Stone",
 				"Count": 20
 			}
 		],
@@ -29,7 +29,7 @@
 		"SoilHeightAboveGround": 8,
 		"RecipeIngredients": [
 			{
-				"Object": 330, // Clay
+				"Object": "Clay",
 				"Count": 10
 			}
 		],
@@ -42,7 +42,7 @@
 		"SoilHeightAboveGround": 10,
 		"RecipeIngredients": [
 			{
-				"Object": 709, // Hardwood
+				"Object": "Hardwood",
 				"Count": 5
 			}
 		],
@@ -55,7 +55,7 @@
 		"SoilHeightAboveGround": 6,
 		"RecipeIngredients": [
 			{
-				"Object": 169, // Driftwood
+				"Object": "Driftwood",
 				"Count": 3
 			}
 		],
@@ -68,7 +68,7 @@
 		"SoilHeightAboveGround": 6,
 		"RecipeIngredients": [
 			{
-				"Object": 336, // Gold Bar
+				"Object": "Gold Bar",
 				"Count": 2
 			}
 		],
@@ -81,11 +81,11 @@
 		"SoilHeightAboveGround": 9,
 		"RecipeIngredients": [
 			{
-				"Object": 769, // Void Essence
+				"Object": "Void Essence",
 				"Count": 10
 			},
 			{
-				"Object": 390, // Stone
+				"Object": "Stone",
 				"Count": 10
 			}
 		],
@@ -98,11 +98,11 @@
 		"SoilHeightAboveGround": 6,
 		"RecipeIngredients": [
 			{
-				"Object": 771, // Fiber
+				"Object": "Fiber",
 				"Count": 5
 			},
 			{
-				"Object": 390, // Stone
+				"Object": "Stone",
 				"Count": 10
 			}
 		],
@@ -115,11 +115,11 @@
 		"SoilHeightAboveGround": 8,
 		"RecipeIngredients": [
 			{
-				"Object": 382, // Coal
+				"Object": "Coal",
 				"Count": 2
 			},
 			{
-				"Object": 390, // Stone
+				"Object": "Stone",
 				"Count": 10
 			}
 		],
@@ -132,11 +132,11 @@
 		"SoilHeightAboveGround": 8,
 		"RecipeIngredients": [
 			{
-				"Object": 245, // Sugar
+				"Object": "Sugar",
 				"Count": 2
 			},
 			{
-				"Object": 388, // Wood
+				"Object": "Wood",
 				"Count": 10
 			}
 		],
@@ -149,7 +149,7 @@
 		"SoilHeightAboveGround": 7,
 		"RecipeIngredients": [
 			{
-				"Object": 388, // Wood
+				"Object": "Wood",
 				"Count": 20
 			}
 		],
@@ -162,11 +162,11 @@
 		"SoilHeightAboveGround": 6,
 		"RecipeIngredients": [
 			{
-				"Object": 881, // Bone Fragment
+				"Object": "Bone Fragment",
 				"Count": 5
 			},
 			{
-				"Object": 390, // Stone
+				"Object": "Stone",
 				"Count": 10
 			}
 		],

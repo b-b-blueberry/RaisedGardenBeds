@@ -11,17 +11,19 @@ namespace RaisedGardenBeds
 	{
 		private readonly IModHelper _helper;
 
-		internal static readonly string AssetPrefix = Path.Combine("Mods", "blueberry.rgb.Assets");
+		internal static readonly string GameContentAssetPath = Path.Combine("Mods", "blueberry.rgb.Assets");
 
-		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(AssetPrefix, "EndOfNightSprites");
-		internal static readonly string GameContentEventDataPath = Path.Combine(AssetPrefix, "EventData");
-		internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(AssetPrefix, "CommonTranslations");
-		internal static readonly string GameContentItemTranslationDataPath = Path.Combine(AssetPrefix, "ItemTranslations");
+		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(GameContentAssetPath, "EndOfNightSprites");
+		internal static readonly string GameContentEventDataPath = Path.Combine(GameContentAssetPath, "EventData");
+		internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(GameContentAssetPath, "CommonTranslations");
+		internal static readonly string GameContentItemTranslationDataPath = Path.Combine(GameContentAssetPath, "ItemTranslations");
 
-		internal static readonly string LocalEndOfNightSpritesPath = Path.Combine("assets", "endOfNightSprites.png");
-		internal static readonly string LocalEventDataPath = Path.Combine("assets", "eventData.json");
+		internal static readonly string LocalAssetPath = "assets";
 
-		internal static readonly string ContentPackPath = Path.Combine("assets", "ContentPack");
+		internal static readonly string LocalEndOfNightSpritesPath = Path.Combine(LocalAssetPath, "endOfNightSprites.png");
+		internal static readonly string LocalEventDataPath = Path.Combine(LocalAssetPath, "eventData.json");
+
+		internal static readonly string ContentPackPath = Path.Combine(LocalAssetPath, "ContentPack");
 
 
 		public AssetManager(IModHelper helper)

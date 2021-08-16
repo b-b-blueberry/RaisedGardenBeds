@@ -224,6 +224,9 @@ namespace RaisedGardenBeds
 			}
 		}
 
+		/// <summary>
+		/// Get a KeyValuePair containing the sprite key and index to be used with the common <see cref="ModEntry.Sprites"/> spritesheet.
+		/// </summary>
 		public static KeyValuePair<string, int> GetSpriteFromVariantKey(string variantKey)
 		{
 			return new KeyValuePair<string, int>(ModEntry.ItemDefinitions[variantKey].SpriteKey, ModEntry.ItemDefinitions[variantKey].SpriteIndex);
@@ -266,16 +269,25 @@ namespace RaisedGardenBeds
 			return OutdoorPot.GetDisplayNameFromName(recipeName.Split('.').Last());
 		}
 
+		/// <summary>
+		/// Get shared localised description for garden bed objects.
+		/// </summary>
 		public static string GetRawDescription()
 		{
 			return Translations.GetTranslation($"item.description{(ModEntry.Config.CanBePlacedInBuildings ? ".indoors" : "")}");
 		}
 
+		/// <summary>
+		/// Get localised display name for this object variant.
+		/// </summary>
 		protected override string loadDisplayName()
 		{
 			return OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey.Value);
 		}
 
+		/// <summary>
+		/// Get localised description string to fit object hovered-in-inventory popout box.
+		/// </summary>
 		public override string getDescription()
 		{
 			string description = OutdoorPot.GetRawDescription();
@@ -460,7 +472,7 @@ namespace RaisedGardenBeds
 
 			Vector2 position = (this.TileLocation * Game1.tileSize) - new Vector2(0, this.SoilHeightAboveGround * Game1.pixelZoom);
 			int delay = Game1.random.Next(1000);
-			float id = (this.tileLocation.X * 4000) + this.tileLocation.Y;
+			float id = (this.TileLocation.X * 4000) + this.TileLocation.Y;
 			Color colour = Color.White * 0.4f;
 			const int frames = 4;
 			const int interval = 60;
@@ -821,13 +833,20 @@ namespace RaisedGardenBeds
 		{
 			return op.hoeDirt.Value.canPlantThisSeedHere(item.ParentSheetIndex, (int)op.TileLocation.X, (int)op.TileLocation.Y);
 		}
-
+		
+		/// <summary>
+		/// Set this object's held object to a given item.
+		/// </summary>
 		public void HoldItem(Item item)
 		{
 			this.heldObject.Value = item.getOne() as StardewValley.Object;
 			this.heldObject.Value.TileLocation = this.TileLocation;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="force">If true, ejects the held object as debris regardless of any other conditions.</param>
 		public bool PopHeldItem(bool force = false)
 		{
 			bool popped = false;
@@ -859,22 +878,36 @@ namespace RaisedGardenBeds
 			return popped || (this.hoeDirt.Value.crop == null && this.heldObject.Value == null);
 		}
 
+		/// <summary>
+		/// Check whether this object's held object is a sprinkler.
+		/// </summary>
 		public bool IsHoldingSprinkler()
 		{
 			return this.heldObject.Value != null && this.heldObject.Value.IsSprinkler();
 		}
 
+		/// <summary>
+		/// Get the current radius for this object's held sprinkler, if any. Returns -1 if none is held.
+		/// </summary>
 		public int GetSprinklerRadius()
 		{
 			return this.IsHoldingSprinkler() ? this.heldObject.Value.GetModifiedRadiusForSprinkler() : -1;
 		}
 
+		/// <summary>
+		/// Water the garden bed's hoe dirt and any held crops.
+		/// </summary>
 		public void Water()
 		{
 			this.hoeDirt.Value.state.Value = 1;
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="location"></param>
+		/// <param name="adjust"></param>
 		public void Unbreak(GameLocation location = null, bool adjust = false)
 		{
 			this.BreakageTimer.Value = this.BreakageStart;
@@ -937,9 +970,13 @@ namespace RaisedGardenBeds
 				location.Objects.Values.OfType<OutdoorPot>().ToList().ForEach(o => o.Arrange(location: location));
 		}
 
+		/// <summary>
+		/// Considers neighbouring objects and sets this object's corner sprites to tile/tesselate/pattern with its neighbours to form arrangements.
+		/// </summary>
+		/// <param name="location">Specific location whose <see cref="StardewValley.GameLocation.Objects"/> dictionary contains this object.</param>
 		public void Arrange(GameLocation location)
 		{
-			if (!this.CanBeArranged)
+			if (!this.CanBeArranged || location == null)
 				return;
 
 			for (int i = 0; i < 4; ++i)
@@ -964,13 +1001,17 @@ namespace RaisedGardenBeds
 			}
 		}
 
-		public static void ArrangeWithNeighbours(GameLocation location, Vector2 tileLocation, int radius = 1)
+		/// <summary>
+		/// Identifies any garden bed objects on the given tile and tries to reform arrangements with neighbouring objects.
+		/// </summary>
+		/// <param name="location">Specific location to check within. Defaults to player's current location.</param>
+		/// <param name="tileLocation">Tile location to check for objects.</param>
+		public static void ArrangeWithNeighbours(GameLocation location, Vector2 tileLocation)
 		{
 			if (location == null)
 				location = Game1.currentLocation;
-			if (radius < 1)
-				return;
 
+			const int radius = 1;
 			Point origin = Utility.Vector2ToPoint(tileLocation);
 			Point start = new Point(
 				Math.Max(0, origin.X - radius),
@@ -992,6 +1033,9 @@ namespace RaisedGardenBeds
 			}
 		}
 
+		/// <summary>
+		/// Whether any two objects are garden beds that can be grouped into arrangements.
+		/// </summary>
 		private static bool CanBeArrangedWithNeighbour(OutdoorPot p, StardewValley.Object o)
 		{
 			bool facts = o is OutdoorPot op && op != null && op.canStackWith(p) && !op.IsBroken && op.CanBeArranged && p.CanBeArranged;

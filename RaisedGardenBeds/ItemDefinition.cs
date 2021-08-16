@@ -98,12 +98,12 @@ namespace RaisedGardenBeds
 			List<string> ingredients = new List<string>();
 			foreach (Dictionary<string, string> entry in data.RecipeIngredients)
 			{
-				int id = int.TryParse(entry["Object"], out int rawId)
-						// Base game objects must be referenced by ID
-						? rawId
-						// Json Assets objects may be referenced by name
-						: Game1.objectInformation.Keys.FirstOrDefault
-							(key => key >= 2000 && Game1.objectInformation[key].Split('/')[0] == entry["Object"]);
+				string strId = entry["Object"];
+				int id = int.TryParse(strId, out int intId)
+						// Base game objects may be referenced by ID
+						? intId
+						// Base and Json Assets objects may be referenced by name
+						: Utility.fuzzyItemSearch(query: strId)?.ParentSheetIndex ?? -1;
 				int quantity = int.Parse(entry["Count"]);
 				ingredients.Add($"{id} {quantity}");
 			}
