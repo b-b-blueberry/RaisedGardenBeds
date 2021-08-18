@@ -116,17 +116,17 @@ namespace RaisedGardenBeds
 				// Root event tokenisation
 				for (int i = 0; i < events.Count; ++i)
 				{
+					// Format event script with event NPC name, as well as their dialogue strings
 					string[] args = new string[] { events[i]["Who"] }
-						.Concat(Translations.GetTranslations()
-							.Where(tl => tl.Key.StartsWith($"event.{i}.dialogue."))
-							.Select(tl => tl.Value.ToString()))
+						.Concat(new int[] { 1, 2, 3, 4 }
+							.Select(j => Translations.GetTranslation($"event.{i}.dialogue.{j}")))
 						.ToArray();
-					events[i]["Conditions"] = string.Format(
-						format: events[i]["Conditions"],
-						events[i]["Who"]);
 					events[i]["Script"] = string.Format(
 						format: events[i]["Script"],
 						args: args);
+					events[i]["Conditions"] = string.Format(
+						format: events[i]["Conditions"],
+						events[i]["Who"]);
 				}
 
 				Log.T($"Loaded {events.Count} event(s).{Environment.NewLine}Root event: {events[0]["Where"]}/{events[0]["Conditions"]}");

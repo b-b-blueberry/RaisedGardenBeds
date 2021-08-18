@@ -45,7 +45,7 @@ namespace RaisedGardenBeds
 			{
 				myID = NewRecipeMenu.OkButtonId
 			};
-
+			
 			this._isActive = true;
 			this._timerBeforeStart = 250;
 			Game1.player.completelyStopAnimatingOrDoingAction();

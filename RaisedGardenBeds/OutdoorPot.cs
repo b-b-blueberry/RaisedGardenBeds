@@ -296,14 +296,28 @@ namespace RaisedGardenBeds
 
 		public override bool placementAction(GameLocation location, int x, int y, Farmer who = null)
 		{
-			Vector2 tileLocation = new Vector2(x, y) / Game1.tileSize;
+			// Round tile location to nearest multiple of absolute tile size, then divide by size to get coordinates
+			Vector2 tileLocation = new Vector2(x - (x % Game1.tileSize), y - (y % Game1.tileSize)) / Game1.tileSize;
+			// Add object to location
 			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: tileLocation);
+			// Check to form arrangements with neighbouring objects
 			OutdoorPot.ArrangeWithNeighbours(location: location, tileLocation: tileLocation);
+			// Remove from active stack if placed by player
 			if (Game1.player.ActiveObject == this)
 			{
 				Game1.player.reduceActiveItemByOne();
 				Game1.playSound("Ship");
 			}
+			return false;
+		}
+
+		public override bool performUseAction(GameLocation location)
+		{
+			return false;
+		}
+
+		public override bool performDropDownAction(Farmer who)
+		{
 			return false;
 		}
 
@@ -904,10 +918,10 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// 
+		/// Mark the object as unbroken, resetting the breakage timer to its starting value.
 		/// </summary>
-		/// <param name="location"></param>
-		/// <param name="adjust"></param>
+		/// <param name="location">Game location containing this object. Defaults to player's current location.</param>
+		/// <param name="adjust">Whether to reform this object and its neighbours into arrangements.</param>
 		public void Unbreak(GameLocation location = null, bool adjust = false)
 		{
 			this.BreakageTimer.Value = this.BreakageStart;
@@ -931,7 +945,7 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// Set values to mark the object as broken, leaving it unable to continue to grow crops.
+		/// Mark the object as broken, leaving it unable to continue to grow crops.
 		/// </summary>
 		/// <param name="arrange">Whether to call <see cref="OutdoorPot.ArrangeAll(GameLocation)"/> after breaking.</param>
 		public void Break(GameLocation location, bool arrange)

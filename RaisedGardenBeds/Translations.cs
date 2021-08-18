@@ -19,32 +19,78 @@ namespace RaisedGardenBeds
 		/// Language code used if current language code contains no entries for a given translation.
 		/// </summary>
 		private static LocalizedContentManager.LanguageCode DefaultLanguageCode => LocalizedContentManager.LanguageCode.en;
+		private static LocalizedContentManager.LanguageCode[] LanguageCodesToTry;
 
+
+		private static void LocalizedContentManager_OnLanguageChange(LocalizedContentManager.LanguageCode code)
+		{
+			Translations.SetForLanguage(code: code);
+		}
+
+		public static void Initialise()
+		{
+			LocalizedContentManager.OnLanguageChange += Translations.LocalizedContentManager_OnLanguageChange;
+			Translations.SetForLanguage(code: LocalizedContentManager.CurrentLanguageCode);
+			Translations.LoadTranslationPacks();
+		}
+
+		public static void SetForLanguage(LocalizedContentManager.LanguageCode code)
+		{
+			LanguageCodesToTry = new[]
+			{
+				code,
+				Translations.DefaultLanguageCode
+			};
+		}
+
+		/// <summary>
+		/// Prompt SMAPI to check for all Content Patcher packs targeting our translation assets.
+		/// </summary>
+		public static void LoadTranslationPacks()
+		{
+			Log.T($"Loading translation packs for locale '{LocalizedContentManager.CurrentLanguageCode.ToString()}'.");
+			Log.T($"Translators should target these paths:{Environment.NewLine}\"Target\": \"{AssetManager.GameContentCommonTranslationDataPath}\"{Environment.NewLine}\"Target\": \"{AssetManager.GameContentItemTranslationDataPath}\"");
+
+			Translations.CommonTranslations = Game1.content.Load
+				<Dictionary<string, Dictionary<string, string>>>
+				(AssetManager.GameContentCommonTranslationDataPath);
+			Translations.ItemTranslations = Game1.content.Load
+				<Dictionary<string, Dictionary<string, Dictionary<string, string>>>>
+				(AssetManager.GameContentItemTranslationDataPath);
+
+			Log.T(Translations.ItemTranslations.Aggregate("Loaded translation pack(s):", (str, entry) => $"{str}{Environment.NewLine}{entry.Key}: {entry.Value.Count} content pack(s) containing {entry.Value.Sum(v => v.Value.Count)} items."));
+		}
 
 		/// <summary>
 		/// Return a dictionary of all translations for the current or default language.
 		/// </summary>
-		public static Dictionary<string, string> GetTranslations()
+		public static Dictionary<string, string> GetTranslations(LocalizedContentManager.LanguageCode? languageCode = null)
 		{
-			Dictionary<string, string> entries;
-			return Translations.CommonTranslations.TryGetValue(LocalizedContentManager.CurrentLanguageCode.ToString(), out entries)
-				? entries
-				: Translations.CommonTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out entries)
-					? entries
-					: Translations.CommonTranslations.First().Value;
+			if (languageCode.HasValue)
+			{
+				return Translations.CommonTranslations[languageCode.ToString()];
+			}
+			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			{
+				return Translations.CommonTranslations[lc.ToString()];
+			}
+			return null;
 		}
 
 		/// <summary>
 		/// Return a dictionary of all item translations for the current or default language.
 		/// </summary>
-		public static Dictionary<string, Dictionary<string, string>> GetItemTranslations()
+		public static Dictionary<string, Dictionary<string, string>> GetItemTranslations(LocalizedContentManager.LanguageCode? languageCode = null)
 		{
-			Dictionary<string, Dictionary<string, string>> entries;
-			return Translations.ItemTranslations.TryGetValue(LocalizedContentManager.CurrentLanguageCode.ToString(), out entries)
-				? entries
-				: Translations.ItemTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out entries)
-					? entries
-					: Translations.ItemTranslations.First().Value;
+			if (languageCode.HasValue)
+			{
+				return Translations.ItemTranslations[languageCode.ToString()];
+			}
+			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			{
+				return Translations.ItemTranslations[lc.ToString()];
+			}
+			return null;
 		}
 
 		/// <summary>
@@ -52,14 +98,18 @@ namespace RaisedGardenBeds
 		/// </summary>
 		public static string GetTranslation(string key, object[] tokens = null)
 		{
-			string translation;
-			Dictionary<string, string> entries;
-			if (!Translations.CommonTranslations.TryGetValue(LocalizedContentManager.CurrentLanguageCode.ToString(), out entries)
-				|| !entries.TryGetValue(key, out translation))
-				if (!Translations.CommonTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out entries)
-					|| !entries.TryGetValue(key, out translation))
-					return key;
-			return tokens?.Length > 0 ? string.Format(translation, tokens) : translation;
+			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			{
+				Dictionary<string, string> entries;
+				string translation;
+
+				if (Translations.CommonTranslations.TryGetValue(lc.ToString(), out entries)
+					&& entries.TryGetValue(key, out translation) && !string.IsNullOrWhiteSpace(translation))
+				{
+					return tokens?.Length > 0 ? string.Format(translation, tokens) : translation;
+				}
+			}
+			return key;
 		}
 
 		/// <summary>
@@ -71,36 +121,20 @@ namespace RaisedGardenBeds
 			string pack = data.ContentPack.Manifest.UniqueID;
 			string item = data.LocalName;
 
-			string translation;
-			Dictionary<string, Dictionary<string, string>> packs;
-			Dictionary<string, string> items;
-			if (!Translations.ItemTranslations.TryGetValue(LocalizedContentManager.CurrentLanguageCode.ToString(), out packs)
-				|| !packs.TryGetValue(pack, out items)
-				|| !items.TryGetValue(item, out translation))
-				if (!Translations.ItemTranslations.TryGetValue(Translations.DefaultLanguageCode.ToString(), out packs)
-					|| !packs.TryGetValue(pack, out items)
-					|| !items.TryGetValue(item, out translation))
-					return data.LocalName;
+			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			{
+				Dictionary<string, Dictionary<string, string>> packs;
+				Dictionary<string, string> items;
+				string translation;
 
-			return Translations.GetTranslation("item.name.variant", tokens: new[] { translation ?? data.LocalName });
-		}
-
-		/// <summary>
-		/// Prompt SMAPI to check for all Content Patcher packs targeting our translation assets.
-		/// </summary>
-		public static void LoadTranslationPacks()
-		{
-			Log.T("Loading translation packs.");
-			Log.T($"Translators should target these paths:{Environment.NewLine}\"Target\": \"{AssetManager.GameContentCommonTranslationDataPath}\"{Environment.NewLine}\"Target\": \"{AssetManager.GameContentItemTranslationDataPath}\"");
-
-			Translations.CommonTranslations = Game1.content.Load
-				<Dictionary<string, Dictionary<string, string>>>
-				(AssetManager.GameContentCommonTranslationDataPath);
-			Translations.ItemTranslations = Game1.content.Load
-				<Dictionary<string, Dictionary<string, Dictionary<string, string>>>>
-				(AssetManager.GameContentItemTranslationDataPath);
-
-			Log.T(Translations.ItemTranslations.Aggregate("Loaded translation pack(s):", (str, entry) => $"{str}{Environment.NewLine}{entry.Key}: {entry.Value.Count} content pack(s) containing {entry.Value.Sum(v => v.Value.Count)} items."));
+				if (Translations.ItemTranslations.TryGetValue(lc.ToString(), out packs) && packs != null
+					&& packs.TryGetValue(pack, out items) && items != null
+					&& items.TryGetValue(item, out translation) && !string.IsNullOrWhiteSpace(translation))
+				{
+					return Translations.GetTranslation("item.name.variant", tokens: new[] { translation ?? data.LocalName });
+				}
+			}
+			return data.LocalName;
 		}
 	}
 }

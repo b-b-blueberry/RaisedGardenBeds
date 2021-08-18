@@ -144,7 +144,7 @@ namespace RaisedGardenBeds
 			this.Helper.Content.AssetEditors.Add(assetManager);
 
 			// Content
-			Translations.LoadTranslationPacks();
+			Translations.Initialise();
 			this.LoadContentPacks();
 			this.AddGenericModConfigMenu();
 
