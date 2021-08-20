@@ -69,6 +69,23 @@ namespace RaisedGardenBeds
 			{
 				this.SaveLoadedBehaviours();
 			}
+
+			// Log root event status
+			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId))
+			{
+				bool checkRawConditions (string s)
+				{
+					return Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != -1;
+				};
+				string conditions = ModEntry.EventData[0]["Conditions"];
+				string checkedConditions = string.Join("/",
+					conditions
+						.Split('/')
+						.ToList()
+						.Select(s => checkRawConditions(s)));
+				Log.T($"Player has not seen root event."
+					+ $"{Environment.NewLine}Preconditions: ({conditions} == {checkedConditions} == {checkRawConditions(conditions)})");
+			}
 			
 			// Add always-available recipes to player list without any unique fanfare
 			ModEntry.AddDefaultRecipes();
@@ -99,7 +116,7 @@ namespace RaisedGardenBeds
 		private void SpaceEvents_ShowNightEndMenus(object sender, SpaceCore.Events.EventArgsShowNightEndMenus e)
 		{
 			// Add and show any newly-available object recipes to player list at the end of day screens
-			List<string> newVarieties = AddNewAvailableRecipes();
+			List<string> newVarieties = ModEntry.AddNewAvailableRecipes();
 			if (newVarieties.Count > 0)
 			{
 				Log.T(newVarieties.Aggregate($"Unlocked {newVarieties.Count} new recipes:", (str, s) => $"{str}{Environment.NewLine}{s}"));
@@ -161,20 +178,20 @@ namespace RaisedGardenBeds
 			// Console commands
 			this.Helper.ConsoleCommands.Add(
 				name: ModEntry.CommandPrefix + "eventget",
-				documentation: $"Check if event has been seen.{Environment.NewLine}Provide event ID, default to root event.",
-				callback: Cmd_IsEventSeen);
+				documentation: $"Check if event has been seen.{Environment.NewLine}Optional event ID, defaults to root event.",
+				callback: ModEntry.Cmd_IsEventSeen);
 			this.Helper.ConsoleCommands.Add(
 				name: ModEntry.CommandPrefix + "eventset",
-				documentation: $"Set state for having seen any event.{Environment.NewLine}Provide event ID, default to root event.",
-				callback: Cmd_ToggleEventSeen);
+				documentation: $"Set state for having seen any event.{Environment.NewLine}Optional event ID, defaults to root event.",
+				callback: ModEntry.Cmd_ToggleEventSeen);
 			this.Helper.ConsoleCommands.Add(
 				name: ModEntry.CommandPrefix + "give",
-				documentation: $"Give several unlocked raised beds.{Environment.NewLine}Has no effect if none are available.",
-				callback: Cmd_Give);
+				documentation: $"Give several of all currently unlocked varieties of raised beds.",
+				callback: ModEntry.Cmd_Give);
 			this.Helper.ConsoleCommands.Add(
 				name: ModEntry.CommandPrefix + "giveall",
 				documentation: "Give several of all varieties of raised beds.",
-				callback: Cmd_GiveAll);
+				callback: ModEntry.Cmd_GiveAll);
 		}
 
 		private void AddGenericModConfigMenu()
@@ -376,7 +393,7 @@ namespace RaisedGardenBeds
 			}
 			if (recipesToAdd.Count > 0)
 			{
-				Log.T($"Adding {recipesToAdd.Count} default recipes:{recipesToAdd.Aggregate(string.Empty, (str, s) => str + Environment.NewLine + s)}");
+				Log.T($"Adding {recipesToAdd.Count} default recipes:{recipesToAdd.Aggregate(string.Empty, (str, s) => $"{str}{Environment.NewLine}{s}")}");
 
 				for (int i = 0; i < recipesToAdd.Count; ++i)
 				{
@@ -433,17 +450,16 @@ namespace RaisedGardenBeds
 					? argQuantity
 					: defaultQuantity;
 
-			if (Game1.player.craftingRecipes.Keys.All(r => !r.StartsWith(OutdoorPot.GenericName)))
-			{
-				Log.D($"No raised bed recipes are unlocked! Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
-				return;
-			}
-
 			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
 
 			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys
-				.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName));
-			foreach (string variantKey in unlockedKeys)
+				.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName))
+				.Select(recipe => OutdoorPot.GetVariantKeyFromName(recipe));
+			if (!unlockedKeys.Any())
+			{
+				Log.D($"No raised bed recipes are unlocked! Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
+			}
+			else foreach (string variantKey in unlockedKeys)
 			{
 				ModEntry.Give(variantKey: variantKey, quantity: quantity);
 			}

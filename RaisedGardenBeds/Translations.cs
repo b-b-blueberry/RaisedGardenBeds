@@ -36,7 +36,7 @@ namespace RaisedGardenBeds
 
 		public static void SetForLanguage(LocalizedContentManager.LanguageCode code)
 		{
-			LanguageCodesToTry = new[]
+			Translations.LanguageCodesToTry = new[]
 			{
 				code,
 				Translations.DefaultLanguageCode
@@ -70,7 +70,7 @@ namespace RaisedGardenBeds
 			{
 				return Translations.CommonTranslations[languageCode.ToString()];
 			}
-			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
 				return Translations.CommonTranslations[lc.ToString()];
 			}
@@ -86,7 +86,7 @@ namespace RaisedGardenBeds
 			{
 				return Translations.ItemTranslations[languageCode.ToString()];
 			}
-			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
 				return Translations.ItemTranslations[lc.ToString()];
 			}
@@ -98,7 +98,7 @@ namespace RaisedGardenBeds
 		/// </summary>
 		public static string GetTranslation(string key, object[] tokens = null)
 		{
-			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
 				Dictionary<string, string> entries;
 				string translation;
@@ -121,7 +121,7 @@ namespace RaisedGardenBeds
 			string pack = data.ContentPack.Manifest.UniqueID;
 			string item = data.LocalName;
 
-			foreach (LocalizedContentManager.LanguageCode lc in LanguageCodesToTry)
+			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
 				Dictionary<string, Dictionary<string, string>> packs;
 				Dictionary<string, string> items;

@@ -14,7 +14,7 @@ namespace RaisedGardenBeds
 			Harmony harmony = new Harmony(id);
 
 			Log.T(typeof(HarmonyPatches).GetMethods().Take(typeof(HarmonyPatches).GetMethods().Count() - 4).Select(mi => mi.Name)
-				.Aggregate("Applying Harmony patches:", (str, s) => str + Environment.NewLine + s));
+				.Aggregate("Applying Harmony patches:", (str, s) => $"{str}{Environment.NewLine}{s}"));
 
 			// Utility
 			harmony.Patch(
