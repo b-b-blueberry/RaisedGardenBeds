@@ -185,8 +185,9 @@ namespace RaisedGardenBeds
 
 			// IndoorPot (Vector2) : Object (Vector2, int, bool)
 			this.hoeDirt.Value = new HoeDirt();
-			if (Game1.isRaining && Game1.currentLocation.IsOutdoors)
+			if (Game1.currentLocation != null && Game1.currentLocation.IsOutdoors && Game1.IsRainingHere(Game1.currentLocation))
 			{
+				// Water the garden bed on-placement if outdoors and raining
 				this.hoeDirt.Value.state.Value = 1;
 			}
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
