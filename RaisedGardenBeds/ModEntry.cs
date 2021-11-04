@@ -103,7 +103,7 @@ namespace RaisedGardenBeds
 
 		private void Specialized_LoadStageChanged(object sender, LoadStageChangedEventArgs e)
 		{
-			if (e.NewStage == StardewModdingAPI.Enums.LoadStage.Loaded && !Context.IsMainPlayer)
+			if (e.NewStage == StardewModdingAPI.Enums.LoadStage.Loaded)
 			{
 				Log.T("Invalidating assets on connected for multiplayer peer.");
 
