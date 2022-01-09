@@ -811,7 +811,7 @@ namespace RaisedGardenBeds
 			// Held objects (eg. Sprinkler)
 			if (this.heldObject.Value != null)
 			{
-				int objectOffset = (4 * Game1.pixelZoom) + (this.heldObject.Value.IsSprinkler() ? 0 : Game1.tileSize);
+				int objectOffset = (4 * Game1.pixelZoom);
 				this.heldObject.Value.draw(
 					spriteBatch,
 					xNonTile: x * Game1.tileSize,
@@ -833,6 +833,11 @@ namespace RaisedGardenBeds
 		public override Item getOne()
 		{
 			return new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: this.TileLocation);
+		}
+
+		public override bool clicked(Farmer who)
+		{
+			return base.clicked(who);
 		}
 
 		public static bool CanAcceptAnything(OutdoorPot op, bool ignoreCrops = false, bool ignoreObjects = false)
@@ -1082,9 +1087,9 @@ namespace RaisedGardenBeds
 			bool okGreenHouse = ModEntry.Config.CanBePlacedInGreenHouse && l.IsGreenhouse;
 			bool okFarmHouse = ModEntry.Config.CanBePlacedInFarmHouse && (l is FarmHouse || l is IslandFarmHouse);
 			bool okFarmBuildings = ModEntry.Config.CanBePlacedInBuildings && l.isStructure.Value;
-			bool okFarm = !l.isStructure.Value && (l.IsFarm || l is FarmCave || l is IslandFarmCave || l is IslandWest);
+			bool okFarmOutdoors = l.IsOutdoors && (l.IsFarm || l is FarmCave || l is IslandFarmCave || l is IslandWest);
 
-			bool okLocation = okGreenHouse || okFarmHouse || okFarmBuildings || okFarm;
+			bool okLocation = okGreenHouse || okFarmHouse || okFarmBuildings || okFarmOutdoors;
 
 			return !l.isTemp() && okLocation;
 		}
