@@ -243,7 +243,7 @@ namespace RaisedGardenBeds
 					tileLocation: Vector2.Zero);
 
 				// Behaviours as from base method
-				recipe.consumeIngredients(null);
+				recipe.consumeIngredients(additional_materials: __instance._materialContainers);
 				if (playSound)
 				{
 					Game1.playSound("coin");
