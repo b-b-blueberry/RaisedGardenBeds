@@ -12,8 +12,23 @@ namespace RaisedGardenBeds
 {
 	public class ModEntry : Mod
 	{
-		// common
-		internal static ModEntry Instance;
+
+        internal static readonly string GameContentAssetPath = Path.Combine("Mods", "blueberry.rgb.Assets");
+
+        internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(GameContentAssetPath, "EndOfNightSprites");
+        internal static readonly string GameContentEventDataPath = Path.Combine(GameContentAssetPath, "EventData");
+        internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(GameContentAssetPath, "CommonTranslations");
+        internal static readonly string GameContentItemTranslationDataPath = Path.Combine(GameContentAssetPath, "ItemTranslations");
+
+        internal static readonly string LocalAssetPath = "assets";
+
+        internal static readonly string LocalEndOfNightSpritesPath = Path.Combine(LocalAssetPath, "endOfNightSprites.png");
+        internal static readonly string LocalEventDataPath = Path.Combine(LocalAssetPath, "eventData.json");
+
+        internal static readonly string ContentPackPath = Path.Combine(LocalAssetPath, "ContentPack");
+
+        // common
+        internal static ModEntry Instance;
 		internal static Config Config;
 
 		// definitions
@@ -33,6 +48,8 @@ namespace RaisedGardenBeds
 		/// </summary>
 		internal static List<Dictionary<string, string>> EventData = null;
 
+		AssetManager assetManager;
+
 		// others
 		internal static int ModUpdateKey;
 		internal static int EventRootId => ModEntry.ModUpdateKey * 10000;
@@ -47,9 +64,67 @@ namespace RaisedGardenBeds
 			ModEntry.ModUpdateKey = int.Parse(this.ModManifest.UpdateKeys.First().Split(':')[1]);
 
 			helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
-		}
+            this.Helper.Events.Content.AssetRequested += this.OnAssetRequested;
 
-		private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
+            assetManager = new AssetManager(helper: this.Helper);
+        }
+
+		private Dictionary<string, Dictionary<string, string>> CTData()
+		{
+            var data = new Dictionary
+					<string, Dictionary<string, string>>
+					(StringComparer.InvariantCultureIgnoreCase);
+
+            // Populate all possible language codes for translation pack support
+            string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+            foreach (string key in keys)
+            {
+                data.Add(key, new Dictionary<string, string>());
+            }
+            return data;
+        }
+
+        private Dictionary<string, Dictionary<string, Dictionary<string, string>>> ITData()
+        {
+            var data = new Dictionary
+                <string, Dictionary<string, Dictionary<string, string>>>
+                (StringComparer.InvariantCultureIgnoreCase);
+
+            // Populate all possible language codes for translation pack support
+            string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+            foreach (string key in keys)
+            {
+                data.Add(key, new Dictionary<string, Dictionary<string, string>>());
+            }
+            return data;
+        }
+
+        private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
+        {
+            if (e.Name.IsEquivalentTo(GameContentEndOfNightSpritesPath))
+            {
+                e.LoadFromModFile
+                    <Texture2D>
+                    (LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
+            }
+            if (e.Name.IsEquivalentTo(GameContentEventDataPath))
+            {
+                e.LoadFromModFile
+                    <Dictionary<string, object>>
+                    (LocalEventDataPath, AssetLoadPriority.Exclusive);
+            }
+            if (e.Name.IsEquivalentTo(GameContentCommonTranslationDataPath))
+            {
+				e.LoadFrom(CTData, AssetLoadPriority.Low);
+            }
+            if (e.Name.IsEquivalentTo(GameContentItemTranslationDataPath))
+            {
+                e.LoadFrom(ITData, AssetLoadPriority.Low);
+            }
+            e.Edit(assetManager.Edit);
+        }
+
+        private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
 		{
 			this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.Event_LoadLate;
 		}
@@ -107,9 +182,9 @@ namespace RaisedGardenBeds
 			{
 				Log.T("Invalidating assets on connected for multiplayer peer.");
 
-				this.Helper.Content.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
-				this.Helper.Content.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
-				this.Helper.Content.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
+				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
+				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
+				this.Helper.GameContent.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
 			}
 		}
 
@@ -154,11 +229,6 @@ namespace RaisedGardenBeds
 		private void Initialise()
 		{
 			Log.T("Initialising mod data.");
-
-			// Assets
-			AssetManager assetManager = new AssetManager(helper: this.Helper);
-			this.Helper.Content.AssetLoaders.Add(assetManager);
-			this.Helper.Content.AssetEditors.Add(assetManager);
 
 			// Content
 			Translations.Initialise();
@@ -257,8 +327,8 @@ namespace RaisedGardenBeds
 			foreach (IContentPack contentPack in contentPacks)
 			{
 				string packKey = contentPack.Manifest.UniqueID;
-				var sprites = contentPack.LoadAsset
-					<Texture2D>
+				var sprites = contentPack.ModContent.Load
+                    <Texture2D>
 					(ItemDefinition.SpritesFile);
 				var data = contentPack.ReadJsonFile
 					<Dictionary<string, ItemDefinition>>
@@ -339,7 +409,7 @@ namespace RaisedGardenBeds
 				// have the variant's unique soil sprite change when watered.
 				if (data.Count > 0)
 				{
-					IAssetData asset = this.Helper.Content.GetPatchHelper(sprites);
+					IAssetData asset = this.Helper.ModContent.GetPatchHelper(sprites);
 					Rectangle destination = Rectangle.Empty;
 					Rectangle source;
 					int width = Game1.smallestTileSize;
