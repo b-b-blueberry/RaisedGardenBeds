@@ -266,16 +266,16 @@ namespace RaisedGardenBeds
 
 		private void AddGenericModConfigMenu()
 		{
-			IGenericModConfigMenuAPI modconfigAPI = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuAPI>("spacechase0.GenericModConfigMenu");
+			IGenericModConfigMenuApi modconfigAPI = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
 			if (modconfigAPI != null)
 			{
-				modconfigAPI.RegisterModConfig(
+				modconfigAPI.Register(
 					mod: this.ModManifest,
-					revertToDefault: () => ModEntry.Config = new Config(),
-					saveToFile: () => this.Helper.WriteConfig(ModEntry.Config));
-				modconfigAPI.SetDefaultIngameOptinValue(
+					reset: () => ModEntry.Config = new Config(),
+					save: () => this.Helper.WriteConfig(ModEntry.Config));
+				modconfigAPI.SetTitleScreenOnlyForNextOptions(
 					mod: this.ModManifest,
-					optedIn: true);
+					false);
 				System.Reflection.PropertyInfo[] properties = ModEntry.Config
 					.GetType()
 					.GetProperties()
@@ -285,12 +285,12 @@ namespace RaisedGardenBeds
 				{
 					string key = property.Name.ToLower();
 					string description = Translations.GetTranslation($"config.{key}.description", defaultToNull: true);
-					modconfigAPI.RegisterSimpleOption(
+					modconfigAPI.AddBoolOption(
 						mod: this.ModManifest,
-						optionName: Translations.GetTranslation($"config.{key}.name"),
-						optionDesc: string.IsNullOrWhiteSpace(description) ? null : description,
-						optionGet: () => (bool)property.GetValue(ModEntry.Config),
-						optionSet: (bool value) => property.SetValue(ModEntry.Config, value: value));
+						name: ()=>Translations.GetTranslation($"config.{key}.name"),
+						tooltip: ()=>string.IsNullOrWhiteSpace(description) ? null : description,
+						getValue: () => (bool)property.GetValue(ModEntry.Config),
+						setValue: (bool value) => property.SetValue(ModEntry.Config, value: value));
 				}
 			}
 		}
