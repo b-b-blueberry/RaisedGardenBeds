@@ -13,20 +13,6 @@ namespace RaisedGardenBeds
 	public class ModEntry : Mod
 	{
 
-        internal static readonly string GameContentAssetPath = Path.Combine("Mods", "blueberry.rgb.Assets");
-
-        internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(GameContentAssetPath, "EndOfNightSprites");
-        internal static readonly string GameContentEventDataPath = Path.Combine(GameContentAssetPath, "EventData");
-        internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(GameContentAssetPath, "CommonTranslations");
-        internal static readonly string GameContentItemTranslationDataPath = Path.Combine(GameContentAssetPath, "ItemTranslations");
-
-        internal static readonly string LocalAssetPath = "assets";
-
-        internal static readonly string LocalEndOfNightSpritesPath = Path.Combine(LocalAssetPath, "endOfNightSprites.png");
-        internal static readonly string LocalEventDataPath = Path.Combine(LocalAssetPath, "eventData.json");
-
-        internal static readonly string ContentPackPath = Path.Combine(LocalAssetPath, "ContentPack");
-
         // common
         internal static ModEntry Instance;
 		internal static Config Config;
@@ -101,23 +87,23 @@ namespace RaisedGardenBeds
 
         private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
         {
-            if (e.Name.IsEquivalentTo(GameContentEndOfNightSpritesPath))
+            if (e.Name.IsEquivalentTo(AssetManager.GameContentEndOfNightSpritesPath))
             {
                 e.LoadFromModFile
                     <Texture2D>
-                    (LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
+                    (AssetManager.LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
             }
-            if (e.Name.IsEquivalentTo(GameContentEventDataPath))
+            if (e.Name.IsEquivalentTo(AssetManager.GameContentEventDataPath))
             {
                 e.LoadFromModFile
                     <Dictionary<string, object>>
-                    (LocalEventDataPath, AssetLoadPriority.Exclusive);
+                    (AssetManager.LocalEventDataPath, AssetLoadPriority.Exclusive);
             }
-            if (e.Name.IsEquivalentTo(GameContentCommonTranslationDataPath))
+            if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
             {
 				e.LoadFrom(CTData, AssetLoadPriority.Low);
             }
-            if (e.Name.IsEquivalentTo(GameContentItemTranslationDataPath))
+            if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
             {
                 e.LoadFrom(ITData, AssetLoadPriority.Low);
             }
