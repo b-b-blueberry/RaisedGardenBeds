@@ -11,11 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json" HintPath="$(GamePath)/smapi-internal/Newtonsoft.Json.dll">
+      <Private>false</Private>
+    </Reference>
     <Reference Include="SpaceCore">
       <HintPath>$(GamePath)\Mods\SpaceCore\SpaceCore.dll</HintPath>
       <Private>false</Private>
