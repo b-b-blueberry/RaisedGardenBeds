@@ -4,7 +4,7 @@
     <AssemblyName>RaisedGardenBeds</AssemblyName>
     <RootNamespace>RaisedGardenBeds</RootNamespace>
     <Version>1.0.5</Version>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <EnableHarmony>true</EnableHarmony>

@@ -132,11 +132,11 @@ namespace RaisedGardenBeds
 			}
 
 			// Log root event status
-			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId))
+			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
 			{
 				bool checkRawConditions (string s)
 				{
-					return Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != -1;
+					return Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != "-1";
 				};
 				string conditions = ModEntry.EventData[0]["Conditions"];
 				string checkedConditions = string.Join("/",
@@ -429,10 +429,10 @@ namespace RaisedGardenBeds
 		public static void AddDefaultRecipes()
 		{
 			List<string> recipesToAdd = new List<string>();
-			int[] eventsSeen = Game1.player.eventsSeen.ToArray();
+			string[] eventsSeen = Game1.player.eventsSeen.ToArray();
 			string precondition = $"{ModEntry.EventRootId}/{ModEntry.EventData[0]["Conditions"]}";
-			int rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
-			bool hasOrWillSeeRootEvent = eventsSeen.Contains(ModEntry.EventRootId) || rootEventReady != -1;
+			string rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
+			bool hasOrWillSeeRootEvent = eventsSeen.Contains(ModEntry.EventRootId.ToString()) || rootEventReady != "-1";
 			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
 			{
 				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
@@ -468,15 +468,15 @@ namespace RaisedGardenBeds
 
 				if (Game1.player.craftingRecipes.ContainsKey(itemName)
 					|| string.IsNullOrEmpty(ModEntry.ItemDefinitions[variantKey].RecipeConditions)
-					|| !Game1.player.eventsSeen.Contains(ModEntry.EventRootId))
+					|| !Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
 				{
 					continue;
 				}
 
 				int eventID = ModEntry.EventRootId + i;
 				string eventKey = $"{eventID.ToString()}/{ModEntry.ItemDefinitions[variantKey].RecipeConditions}";
-				int precondition = Game1.getFarm().checkEventPrecondition(eventKey);
-				if (precondition != -1)
+				string precondition = Game1.getFarm().checkEventPrecondition(eventKey);
+				if (precondition != "-1")
 				{
 					newVariants.Add(variantKey);
 					Game1.player.craftingRecipes.Add(itemName, 0);
@@ -544,7 +544,7 @@ namespace RaisedGardenBeds
 				? argId
 				: ModEntry.EventRootId;
 
-			Log.D($"Player {(Game1.player.eventsSeen.Contains(eventId) ? "has" : "has not")} seen event {eventId}.");
+			Log.D($"Player {(Game1.player.eventsSeen.Contains(eventId.ToString()) ? "has" : "has not")} seen event {eventId}.");
 		}
 
 		public static void Cmd_ToggleEventSeen(string s, string[] args)
@@ -552,13 +552,13 @@ namespace RaisedGardenBeds
 			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
 				? argId
 				: ModEntry.EventRootId;
-			if (Game1.player.eventsSeen.Contains(eventId))
+			if (Game1.player.eventsSeen.Contains(eventId.ToString()))
 			{
-				Game1.player.eventsSeen.Remove(eventId);
+				Game1.player.eventsSeen.Remove(eventId.ToString());
 			}
 			else
 			{
-				Game1.player.eventsSeen.Add(eventId);
+				Game1.player.eventsSeen.Add(eventId.ToString());
 			}
 			ModEntry.Cmd_IsEventSeen(s: s, args: args);
 		}

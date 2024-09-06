@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Netcode;
 using StardewValley;
+using StardewValley.GameData.BigCraftables;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 using System;
@@ -33,7 +34,6 @@ namespace RaisedGardenBeds
 		public override string DisplayName
 		{
 			get => this.displayName;
-			set => this.displayName = value;
 		}
 		/// <summary>
 		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
@@ -155,31 +155,25 @@ namespace RaisedGardenBeds
 
 			// Object ()
 			this.initNetFields();
-			
+
 			// Object (Vector2, int, bool) : Object ()
 			this.ParentSheetIndex = OutdoorPot.BaseParentSheetIndex;
 			this.TileLocation = tileLocation;
 			this.CanBeSetDown = true;
 			this.bigCraftable.Value = true;
-			this.boundingBox.Value = new Rectangle((int)tileLocation.X * Game1.tileSize, (int)tileLocation.Y * Game1.tileSize, Game1.tileSize, Game1.tileSize);
 
-			Game1.bigCraftablesInformation.TryGetValue(this.ParentSheetIndex, out string objectInformation);
+			Game1.bigCraftableData.TryGetValue(OutdoorPot.GenericName, out BigCraftableData objectInformation);
 			if (objectInformation != null)
 			{
-				string[] objectInfoArray = objectInformation.Split('/');
-				this.Name = objectInfoArray[0];
-				this.Price = int.Parse(objectInfoArray[1]);
-				this.Edibility = int.Parse(objectInfoArray[2]);
-				string[] typeAndCategory = objectInfoArray[3].Split(' ');
-				this.Type = typeAndCategory[0];
-				if (typeAndCategory.Length > 1)
-				{
-					this.Category = Convert.ToInt32(typeAndCategory[1]);
-				}
-				this.setOutdoors.Value = bool.Parse(objectInfoArray[5]);
-				this.setIndoors.Value = bool.Parse(objectInfoArray[6]);
-				this.Fragility = int.Parse(objectInfoArray[7]);
-				this.isLamp.Value = false;
+				this.Name = objectInformation.Name;
+				this.Price = objectInformation.Price;
+				this.Edibility = StardewValley.Object.inedible;
+				this.Type = "Crafting";
+				this.Category = StardewValley.Object.CraftingCategory;
+				this.setOutdoors.Value = objectInformation.CanBePlacedOutdoors;
+				this.setIndoors.Value = objectInformation.CanBePlacedIndoors;
+				this.Fragility = objectInformation.Fragility;
+				this.isLamp.Value = objectInformation.IsLamp;
 				this.IsRecipe = false;
 			}
 
@@ -193,13 +187,23 @@ namespace RaisedGardenBeds
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
 
 			// this (string, Vector2) : IndoorPot (Vector2)
+			this.InitOutdoorPot(variantKey, tileLocation);
+		}
+
+		public void InitOutdoorPot(string variantKey, Vector2 tileLocation)
+		{
 			this.VariantKey.Value = variantKey;
+			this.boundingBox.Value = new Rectangle((int)tileLocation.X * Game1.tileSize, (int)tileLocation.Y * Game1.tileSize, Game1.tileSize, Game1.tileSize);
 		}
 
 		protected override void initNetFields()
 		{
 			base.initNetFields();
-			this.NetFields.AddFields(this.VariantKey, this.BreakageTimer, this.Neighbours);
+
+			this.NetFields
+				.AddField(this.VariantKey)
+				.AddField(this.BreakageTimer)
+				.AddField(this.Neighbours);
 			this.VariantKey.fieldChangeEvent += this.Event_VariantKeyChanged;
 		}
 
@@ -218,7 +222,6 @@ namespace RaisedGardenBeds
 				?? oldValue
 				?? ModEntry.ItemDefinitions.Keys.FirstOrDefault(key => key.StartsWith(ModEntry.Instance.ModManifest.Author))
 				?? ModEntry.ItemDefinitions.Keys.First();
-			this.DisplayName = this.loadDisplayName();
 			if (resetBreakage)
 			{
 				this.BreakageTimer.Value = this.BreakageStart;
@@ -322,16 +325,16 @@ namespace RaisedGardenBeds
 			return false;
 		}
 
-		public override void performRemoveAction(Vector2 tileLocation, GameLocation environment)
+		public override void performRemoveAction()
 		{
-			if (this.PopHeldItem(l: environment))
+			if (this.PopHeldItem())
 			{
-				base.performRemoveAction(tileLocation, environment);
-				OutdoorPot.ArrangeAllOnNextTick(specificLocation: environment);
+				base.performRemoveAction();
+				OutdoorPot.ArrangeAllOnNextTick(specificLocation: this.Location);
 			}
 		}
 
-		public override bool performToolAction(Tool t, GameLocation location)
+		public override bool performToolAction(Tool t)
 		{
 			if (this.IsBroken)
 			{
@@ -340,7 +343,7 @@ namespace RaisedGardenBeds
 				{
 					if (t is StardewValley.Tools.MeleeWeapon)
 					{
-						base.performToolAction(t, location);
+						base.performToolAction(t);
 					}
 					return false;
 				}
@@ -348,19 +351,19 @@ namespace RaisedGardenBeds
 				// Broken objects will not return to the inventory when hit, but will be destroyed
 				// and provide a small refund of the primary resource used in crafting.
 
-				location.playSound("axchop");
+				this.Location.playSound("axchop");
 
 				// Remove object without adjusting neighbours, as neighbours have already adjusted to ignore the broken object
-				if (this.PopHeldItem(l: location, force: true))
+				if (this.PopHeldItem(force: true))
 				{
 					// visual debris
 					Game1.createRadialDebris(
-						location: location, debrisType: 12,
+						location: this.Location, debrisType: 12,
 						xTile: (int)this.TileLocation.X, yTile: (int)this.TileLocation.Y,
 						numberOfChunks: Game1.random.Next(4, 10), resource: false);
 					Multiplayer multiplayer = ModEntry.Instance.Helper.Reflection.GetField<Multiplayer>(typeof(Game1), "multiplayer").GetValue();
 					multiplayer.broadcastSprites(
-						location: location,
+						location: this.Location,
 						sprites: new TemporaryAnimatedSprite(
 							rowInAnimationTexture: 12,
 							position: new Vector2(this.TileLocation.X * Game1.tileSize, this.TileLocation.Y * Game1.tileSize),
@@ -379,7 +382,7 @@ namespace RaisedGardenBeds
 					if (refundQuantity > 0)
 					{
 						Game1.createRadialDebris(
-							location: location,
+							location: this.Location,
 							debrisType: refundItem,
 							xTile: (int)this.TileLocation.X - 1,
 							yTile: (int)this.TileLocation.Y - 1,
@@ -390,20 +393,20 @@ namespace RaisedGardenBeds
 					}
 
 					// destroy object
-					location.Objects.Remove(this.TileLocation);
+					this.Location.Objects.Remove(this.TileLocation);
 				}
 			}
 			else
 			{
 				// Attempt to pop object or its held objects if any
-				bool isValidAction = base.performToolAction(t, location);
+				bool isValidAction = base.performToolAction(t);
 				if (isValidAction)
 				{
-					if (this.PopHeldItem(l: location)
+					if (this.PopHeldItem()
 						&& Game1.createItemDebris(this, Game1.player.getStandingPosition(), Game1.player.FacingDirection) is Debris debris && debris != null
-						&& location.Objects.Remove(this.TileLocation))
+						&& this.Location.Objects.Remove(this.TileLocation))
 					{
-						OutdoorPot.ArrangeWithNeighbours(location: location, tileLocation: this.TileLocation);
+						OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
 					}
 				}
 			}
@@ -412,7 +415,7 @@ namespace RaisedGardenBeds
 			return false;
 		}
 
-		public override bool performObjectDropInAction(Item dropInItem, bool probe, Farmer who)
+		public override bool performObjectDropInAction(Item dropInItem, bool probe, Farmer who, bool returnFalseIfItemConsumed = false)
 		{
 			if (dropInItem == null)
 			{
@@ -448,7 +451,7 @@ namespace RaisedGardenBeds
 					{
 						return false;
 					}
-					else if (this.PopHeldItem(l: who.currentLocation))
+					else if (this.PopHeldItem())
 					{
 						this.HoldItem(dropInItem);
 					}
@@ -462,7 +465,7 @@ namespace RaisedGardenBeds
 			return OutdoorPot.CanAcceptAnything(op: this) && base.performObjectDropInAction(dropInItem, probe, who);
 		}
 
-		public override bool canBePlacedHere(GameLocation l, Vector2 tile)
+		public override bool canBePlacedHere(GameLocation l, Vector2 tile, CollisionMask collisionMask = CollisionMask.All, bool showError = false)
 		{
 			// Check that this is a valid placeable game location
 			if (!OutdoorPot.IsLocationValid(l))
@@ -471,7 +474,7 @@ namespace RaisedGardenBeds
 			}
 			
 			// Check to ensure there are no obstructions on this tile
-			bool noTiles = l.isTileLocationTotallyClearAndPlaceableIgnoreFloors(tile);
+			bool noTiles = l.IsTileBlockedBy(tile);
 			bool noObjects = !l.Objects.ContainsKey(tile);
 			bool noCrops = (!l.terrainFeatures.ContainsKey(tile) || l.terrainFeatures[tile] is Flooring || (l.terrainFeatures[tile] is HoeDirt hoeDirt && hoeDirt.crop == null));
 			bool noFoliage = l.getLargeTerrainFeatureAt((int)tile.X, (int)tile.Y) == null;
@@ -488,7 +491,7 @@ namespace RaisedGardenBeds
 			return other is OutdoorPot o && o != null && o.VariantKey == this.VariantKey;
 		}
 
-		public override void ApplySprinklerAnimation(GameLocation location)
+		public override void ApplySprinklerAnimation()
 		{
 			if (this.GetSprinklerRadius() is int radius && radius < 1)
 			{
@@ -497,7 +500,7 @@ namespace RaisedGardenBeds
 
 			Vector2 position = (this.TileLocation * Game1.tileSize) - new Vector2(0, this.SoilHeightAboveGround * Game1.pixelZoom);
 			int delay = Game1.random.Next(1000);
-			float id = (this.TileLocation.X * 4000) + this.TileLocation.Y;
+			int id = (int)((this.TileLocation.X * 4000) + this.TileLocation.Y);
 			float scale = radius / 2f;
 			Color colour = Color.White * 0.4f;
 			const int frames = 4;
@@ -513,7 +516,7 @@ namespace RaisedGardenBeds
 					float[] rotations = new [] { 0, (float)(Math.PI / 2), (float)Math.PI, (float)(Math.PI + (Math.PI / 2)) };
 					for (int i = 0; i < 4; ++i)
 					{
-						location.temporarySprites.Add(
+						this.Location.temporarySprites.Add(
 							new TemporaryAnimatedSprite(
 								rowInAnimationTexture: index,
 								position + offsets[i],
@@ -531,7 +534,7 @@ namespace RaisedGardenBeds
 					break;
 				}
 				case 1:
-					location.temporarySprites.Add(
+					this.Location.temporarySprites.Add(
 						new TemporaryAnimatedSprite(
 							"TileSheets\\animations", new Rectangle(0, 1984, 192, 192),
 							animationInterval: interval,
@@ -548,7 +551,7 @@ namespace RaisedGardenBeds
 					break;
 				default:
 				{
-					location.temporarySprites.Add(
+					this.Location.temporarySprites.Add(
 						new TemporaryAnimatedSprite(
 							"TileSheets\\animations",
 							new Rectangle(0, 2176, 320, 320),
@@ -569,7 +572,7 @@ namespace RaisedGardenBeds
 			}
 		}
 
-		public override void DayUpdate(GameLocation location)
+		public override void DayUpdate()
 		{
 			if (ModEntry.Config.RaisedBedsMayBreakWithAge)
 			{
@@ -583,7 +586,7 @@ namespace RaisedGardenBeds
 			else if (this.IsBroken)
 			{
 				// Ignore breakage timer when disabled
-				this.Unbreak(location: location, adjust: true);
+				this.Unbreak(adjust: true);
 			}
 			if (!this.IsBroken && this.heldObject.Value != null)
 			{
@@ -591,38 +594,38 @@ namespace RaisedGardenBeds
 				int sprinklerRadius = isSprinkler ? this.heldObject.Value.GetModifiedRadiusForSprinkler() : -1;
 				if (ModEntry.Config.SprinklersEnabled
 					&& isSprinkler && sprinklerRadius >= 0
-					&& (!Game1.IsRainingHere(location) || !location.IsOutdoors))
+					&& (!Game1.IsRainingHere(this.Location) || !this.Location.IsOutdoors))
 				{
-					location.postFarmEventOvernightActions.Add(delegate
+					this.Location.postFarmEventOvernightActions.Add(delegate
 					{
 						if (!Game1.player.team.SpecialOrderRuleActive("NO_SPRINKLER"))
 						{
 							foreach (Vector2 current in this.heldObject.Value.GetSprinklerTiles())
 							{
-								this.heldObject.Value.ApplySprinkler(location, current);
+								this.heldObject.Value.ApplySprinkler(current);
 							}
-							this.ApplySprinklerAnimation(location); // We don't call heldObject.DayUpdate() so as to use custom animation logic
+							this.ApplySprinklerAnimation(); // We don't call heldObject.DayUpdate() so as to use custom animation logic
 						}
 					});
 				}
 			}
-			base.DayUpdate(location);
+			base.DayUpdate();
 		}
 
-		public override void updateWhenCurrentLocation(GameTime time, GameLocation environment)
+		public override void updateWhenCurrentLocation(GameTime time)
 		{
-			base.updateWhenCurrentLocation(time, environment);
-			this.heldObject.Value?.updateWhenCurrentLocation(time, environment);
+			base.updateWhenCurrentLocation(time);
+			this.heldObject.Value?.updateWhenCurrentLocation(time);
 		}
 
-		public override bool minutesElapsed(int minutes, GameLocation environment)
+		public override bool minutesElapsed(int minutes)
 		{
 			return false;
 		}
 
-		public override void addWorkingAnimation(GameLocation environment) {}
+		public override void addWorkingAnimation() {}
 
-		public override void onReadyForHarvest(GameLocation environment) {}
+		public override void onReadyForHarvest() {}
 
 		public override void drawWhenHeld(SpriteBatch spriteBatch, Vector2 objectPosition, Farmer f)
 		{
@@ -635,7 +638,7 @@ namespace RaisedGardenBeds
 				origin: Vector2.Zero,
 				scale: Game1.pixelZoom,
 				effects: SpriteEffects.None,
-				layerDepth: Math.Max(0f, (f.getStandingY() + 3) / 10000f));
+				layerDepth: Math.Max(0f, (f.StandingPixel.Y + 3) / 10000f));
 		}
 
 		public override void drawInMenu(SpriteBatch spriteBatch, Vector2 location, float scaleSize, float transparency, float layerDepth, StackDrawType drawStackNumber, Color color, bool drawShadow)
@@ -777,9 +780,9 @@ namespace RaisedGardenBeds
 			}
 
 			// Fertiliser
-			if (this.hoeDirt.Value.fertilizer.Value != 0)
+			if (this.hoeDirt.Value.fertilizer.Value is not null)
 			{
-				Rectangle fertilizer_rect = this.hoeDirt.Value.GetFertilizerSourceRect(this.hoeDirt.Value.fertilizer.Value);
+				Rectangle fertilizer_rect = this.hoeDirt.Value.GetFertilizerSourceRect();
 				fertilizer_rect.Width = 13;
 				fertilizer_rect.Height = 13;
 
@@ -825,14 +828,23 @@ namespace RaisedGardenBeds
 			{
 				this.bush.Value.draw(
 					spriteBatch,
-					tileLocation: new Vector2(x, y),
 					yDrawOffset: -(this.SoilHeightAboveGround * Game1.pixelZoom));
 			}
 		}
 
-		public override Item getOne()
+		protected override Item GetOneNew()
 		{
-			return new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: this.TileLocation);
+			return new OutdoorPot();
+		}
+
+		protected override void GetOneCopyFrom(Item source)
+		{
+			base.GetOneCopyFrom(source);
+
+			if (source is OutdoorPot other)
+			{
+				other.InitOutdoorPot(variantKey: other.VariantKey.Value, tileLocation: other.TileLocation);
+			}
 		}
 
 		public override bool clicked(Farmer who)
@@ -850,7 +862,7 @@ namespace RaisedGardenBeds
 		public static bool CanAcceptItemOrSeed(Item item)
 		{
 			return item != null && !(item is Tool)
-				&& !StardewValley.Object.isWildTreeSeed(item.ParentSheetIndex)
+				&& !StardewValley.Object.isWildTreeSeed(itemId: item.ItemId)
 				&& (item.Category == -19 || item.Category == -74 || (item is StardewValley.Object o && o.isSapling()));
 		}
 
@@ -861,7 +873,7 @@ namespace RaisedGardenBeds
 
 		public static bool CanAcceptSeed(Item item, OutdoorPot op)
 		{
-			return op.hoeDirt.Value.canPlantThisSeedHere(item.ParentSheetIndex, (int)op.TileLocation.X, (int)op.TileLocation.Y);
+			return op.hoeDirt.Value.canPlantThisSeedHere(itemId: item.ItemId);
 		}
 		
 		/// <summary>
@@ -877,7 +889,7 @@ namespace RaisedGardenBeds
 		/// 
 		/// </summary>
 		/// <param name="force">If true, ejects the held object as debris regardless of any other conditions.</param>
-		public bool PopHeldItem(GameLocation l, bool force = false)
+		public bool PopHeldItem(bool force = false)
 		{
 			bool popped = false;
 
@@ -887,7 +899,7 @@ namespace RaisedGardenBeds
 				if (force)
 				{
 					if (this.hoeDirt.Value.crop.harvest(xTile: (int)this.TileLocation.X, yTile: (int)this.TileLocation.Y, soil: this.hoeDirt.Value)
-						|| this.hoeDirt.Value.crop.hitWithHoe((int)this.TileLocation.X, (int)this.TileLocation.Y, location: l, dirt: this.hoeDirt.Value))
+						|| this.hoeDirt.Value.crop.hitWithHoe((int)this.TileLocation.X, (int)this.TileLocation.Y, location: this.Location, dirt: this.hoeDirt.Value))
 					{}
 					else
 					{
@@ -900,7 +912,7 @@ namespace RaisedGardenBeds
 			// Pop held objects
 			if (this.heldObject.Value != null)
 			{
-				if (force && Game1.createItemDebris(item: heldObject.Value, origin: this.TileLocation * Game1.tileSize, direction: -1) != null)
+				if (force && Game1.createItemDebris(item: heldObject.Value, pixelOrigin: this.TileLocation * Game1.tileSize, direction: -1) != null)
 				{
 					this.heldObject.Value.TileLocation = Vector2.Zero;
 					this.heldObject.Value = null;
@@ -932,25 +944,15 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// Water the garden bed's hoe dirt and any held crops.
-		/// </summary>
-		public void Water()
-		{
-			this.hoeDirt.Value.state.Value = 1;
-			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
-		}
-
-		/// <summary>
 		/// Mark the object as unbroken, resetting the breakage timer to its starting value.
 		/// </summary>
-		/// <param name="location">Game location containing this object. Defaults to player's current location.</param>
 		/// <param name="adjust">Whether to reform this object and its neighbours into arrangements.</param>
-		public void Unbreak(GameLocation location = null, bool adjust = false)
+		public void Unbreak(bool adjust = false)
 		{
 			this.BreakageTimer.Value = this.BreakageStart;
 			if (adjust)
 			{
-				OutdoorPot.ArrangeWithNeighbours(location: location, tileLocation: this.TileLocation);
+				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
 			}
 		}
 
@@ -962,7 +964,7 @@ namespace RaisedGardenBeds
 			foreach (GameLocation location in specificLocation != null ? new[] { specificLocation } : Game1.locations)
 			{
 				List<OutdoorPot> pots = location.Objects.Values.OfType<OutdoorPot>().Where(o => o.IsReadyToBreak).ToList();
-				pots.ForEach(pot => pot.Break(location: location, arrange: false));
+				pots.ForEach(pot => pot.Break(arrange: false));
 				OutdoorPot.ArrangeAll(specificLocation: location);
 			}
 		}
@@ -971,12 +973,12 @@ namespace RaisedGardenBeds
 		/// Mark the object as broken, leaving it unable to continue to grow crops.
 		/// </summary>
 		/// <param name="arrange">Whether to call <see cref="OutdoorPot.ArrangeAll(GameLocation)"/> after breaking.</param>
-		public void Break(GameLocation location, bool arrange)
+		public void Break(bool arrange)
 		{
 			this.BreakageTimer.Value = OutdoorPot.BreakageDefinite;
 			if (arrange)
 			{
-				OutdoorPot.ArrangeWithNeighbours(location: location, tileLocation: this.TileLocation);
+				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
 			}
 		}
 
@@ -1091,7 +1093,7 @@ namespace RaisedGardenBeds
 
 			bool okLocation = okGreenHouse || okFarmHouse || okFarmBuildings || okFarmOutdoors;
 
-			return !l.isTemp() && okLocation;
+			return !l.IsTemporary && okLocation;
 		}
 	}
 }

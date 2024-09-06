@@ -38,23 +38,23 @@ namespace RaisedGardenBeds
 				// Utility
 				new PatchTemplate(
 					type: HarmonyPatchType.Prefix,
-					original: AccessTools.Method(typeof(StardewValley.Utility), "isThereAnObjectHereWhichAcceptsThisItem"),
+					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(StardewValley.Utility.isThereAnObjectHereWhichAcceptsThisItem)),
 					patch: nameof(HarmonyPatches.Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix)),
 				new PatchTemplate(
 					type: HarmonyPatchType.Prefix,
-					original: AccessTools.Method(typeof(StardewValley.Utility), "isViableSeedSpot"),
+					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(GameLocation.CanPlantSeedsHere)),
 					patch: nameof(HarmonyPatches.Utility_IsViableSeedSpot_Prefix)),
 				
 				// Object
 				new PatchTemplate(
 					type: HarmonyPatchType.Prefix,
-					original: AccessTools.Method(typeof(StardewValley.Object), "ApplySprinkler"),
+					original: AccessTools.Method(typeof(StardewValley.Object), nameof(StardewValley.Object.ApplySprinkler)),
 					patch: nameof(HarmonyPatches.Object_ApplySprinkler_Prefix)),
 				
 				// GameLocation
 				new PatchTemplate(
 					type: HarmonyPatchType.Postfix,
-					original: AccessTools.Method(typeof(StardewValley.GameLocation), "isTileOccupiedForPlacement"),
+					original: AccessTools.Method(typeof(StardewValley.GameLocation), nameof(StardewValley.GameLocation.IsTileOccupiedBy)),
 					patch: nameof(HarmonyPatches.GameLocation_IsTileOccupiedForPlacement_Postfix)),
 				
 				// CraftingPage
@@ -145,13 +145,12 @@ namespace RaisedGardenBeds
 		/// Replace logic for garden bed objects being watered by sprinklers.
 		/// </summary>
 		public static bool Object_ApplySprinkler_Prefix(
-			GameLocation location,
-			Vector2 tile)
+			StardewValley.Object __instance)
 		{
 			try
 			{
 				if (ModEntry.Config.SprinklersEnabled
-					&& location.Objects.TryGetValue(tile, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+					&& __instance is OutdoorPot op)
 				{
 					if (OutdoorPot.CanAcceptAnything(op: op, ignoreCrops: true))
 					{
@@ -173,13 +172,13 @@ namespace RaisedGardenBeds
 		public static void GameLocation_IsTileOccupiedForPlacement_Postfix(
 			GameLocation __instance,
 			ref bool __result,
-			Vector2 tileLocation,
-			StardewValley.Object toPlace)
+			Vector2 tile,
+			StardewValley.Object to_place)
 		{
-			if (__instance.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+			if (__instance.Objects.TryGetValue(tile, out StardewValley.Object o) && o != null && o is OutdoorPot op)
 			{
-				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(toPlace)
-					&& op.hoeDirt.Value.canPlantThisSeedHere(toPlace.ParentSheetIndex, (int)tileLocation.X, (int)tileLocation.Y, toPlace.Category == -19);
+				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(to_place)
+					&& op.hoeDirt.Value.canPlantThisSeedHere(itemId: to_place.ItemId, isFertilizer: to_place.Category == StardewValley.Object.fertilizerCategory);
 				if (OutdoorPot.CanAcceptAnything(op: op) && isPlantable)
 				{
 					__result = false;
@@ -243,7 +242,7 @@ namespace RaisedGardenBeds
 					tileLocation: Vector2.Zero);
 
 				// Behaviours as from base method
-				recipe.consumeIngredients(additional_materials: __instance._materialContainers);
+				recipe.consumeIngredients(additionalMaterials: __instance._materialContainers);
 				if (playSound)
 				{
 					Game1.playSound("coin");
