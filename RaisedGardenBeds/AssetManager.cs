@@ -1,9 +1,9 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using StardewModdingAPI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 
 namespace RaisedGardenBeds
 {
@@ -156,9 +156,9 @@ namespace RaisedGardenBeds
 				string name, description;
 
 				// Patch generic object entry into bigcraftables file, including display name and description from localisations file
-				name = Translations.GetTranslation("item.name"); 
+				name = Translations.GetTranslation("item.name");
 				description = Translations.GetTranslation("item.description.default");
-				fields = data.First().Value.Split('/');	// Use existing data as a template; most fields are common or unused
+				fields = data.First().Value.Split('/'); // Use existing data as a template; most fields are common or unused
 				fields[0] = OutdoorPot.GenericName;
 				fields[4] = description;
 				fields[8] = name;
@@ -174,7 +174,7 @@ namespace RaisedGardenBeds
 					fields[8] = name;
 					data[id + i] = string.Join("/", fields);
 				}
-				
+
 				// Don't remove the generic craftable from data lookup, since it's used later for crafting recipes and defaults
 
 				return;

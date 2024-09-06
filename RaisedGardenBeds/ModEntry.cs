@@ -1,19 +1,19 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace RaisedGardenBeds
 {
 	public class ModEntry : Mod
 	{
-        // common
-        internal static ModEntry Instance;
+		// common
+		internal static ModEntry Instance;
 		internal static Config Config;
 
 		// definitions
@@ -49,67 +49,67 @@ namespace RaisedGardenBeds
 			ModEntry.ModUpdateKey = int.Parse(this.ModManifest.UpdateKeys.First().Split(':')[1]);
 
 			helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
-            this.Helper.Events.Content.AssetRequested += this.OnAssetRequested;
+			this.Helper.Events.Content.AssetRequested += this.OnAssetRequested;
 
-            assetManager = new AssetManager(helper: this.Helper);
-        }
+			assetManager = new AssetManager(helper: this.Helper);
+		}
 
 		private Dictionary<string, Dictionary<string, string>> CTData()
 		{
-            var data = new Dictionary
-					<string, Dictionary<string, string>>
-					(StringComparer.InvariantCultureIgnoreCase);
+			var data = new Dictionary
+				<string, Dictionary<string, string>>
+				(StringComparer.InvariantCultureIgnoreCase);
 
-            // Populate all possible language codes for translation pack support
-            string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
-            foreach (string key in keys)
-            {
-                data.Add(key, []);
-            }
-            return data;
-        }
+			// Populate all possible language codes for translation pack support
+			string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+			foreach (string key in keys)
+			{
+				data.Add(key, []);
+			}
+			return data;
+		}
 
-        private Dictionary<string, Dictionary<string, Dictionary<string, string>>> ITData()
-        {
-            var data = new Dictionary
-                <string, Dictionary<string, Dictionary<string, string>>>
-                (StringComparer.InvariantCultureIgnoreCase);
+		private Dictionary<string, Dictionary<string, Dictionary<string, string>>> ITData()
+		{
+			var data = new Dictionary
+				<string, Dictionary<string, Dictionary<string, string>>>
+				(StringComparer.InvariantCultureIgnoreCase);
 
-            // Populate all possible language codes for translation pack support
-            string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
-            foreach (string key in keys)
-            {
-                data.Add(key, []);
-            }
-            return data;
-        }
+			// Populate all possible language codes for translation pack support
+			string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
+			foreach (string key in keys)
+			{
+				data.Add(key, []);
+			}
+			return data;
+		}
 
-        private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
-        {
-            if (e.Name.IsEquivalentTo(AssetManager.GameContentEndOfNightSpritesPath))
-            {
-                e.LoadFromModFile
-                    <Texture2D>
-                    (AssetManager.LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
-            }
-            if (e.Name.IsEquivalentTo(AssetManager.GameContentEventDataPath))
-            {
-                e.LoadFromModFile
-                    <Dictionary<string, object>>
-                    (AssetManager.LocalEventDataPath, AssetLoadPriority.Exclusive);
-            }
-            if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
-            {
+		private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
+		{
+			if (e.Name.IsEquivalentTo(AssetManager.GameContentEndOfNightSpritesPath))
+			{
+				e.LoadFromModFile
+					<Texture2D>
+					(AssetManager.LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
+			}
+			if (e.Name.IsEquivalentTo(AssetManager.GameContentEventDataPath))
+			{
+				e.LoadFromModFile
+					<Dictionary<string, object>>
+					(AssetManager.LocalEventDataPath, AssetLoadPriority.Exclusive);
+			}
+			if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
+			{
 				e.LoadFrom(this.CTData, AssetLoadPriority.Low);
-            }
-            if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
-            {
+			}
+			if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
+			{
 				e.LoadFrom(this.ITData, AssetLoadPriority.Low);
-            }
-            e.Edit(assetManager.Edit);
-        }
+			}
+			e.Edit(assetManager.Edit);
+		}
 
-        private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
+		private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
 		{
 			this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.Event_LoadLate;
 		}
@@ -143,7 +143,7 @@ namespace RaisedGardenBeds
 				Log.T($"Player has not seen root event."
 					+ $"{Environment.NewLine}Preconditions: ({conditions} == {checkedConditions} == {checkRawConditions(conditions)})");
 			}
-			
+
 			// Add always-available recipes to player list without any unique fanfare
 			ModEntry.AddDefaultRecipes();
 		}
@@ -310,7 +310,7 @@ namespace RaisedGardenBeds
 			{
 				string packKey = contentPack.Manifest.UniqueID;
 				var sprites = contentPack.ModContent.Load
-                    <Texture2D>
+					<Texture2D>
 					(ItemDefinition.SpritesFile);
 				var data = contentPack.ReadJsonFile
 					<Dictionary<string, ItemDefinition>>

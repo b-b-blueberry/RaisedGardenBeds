@@ -1,11 +1,11 @@
-﻿using HarmonyLib; // el diavolo nuevo
-using Microsoft.Xna.Framework;
-using StardewValley;
-using StardewValley.Menus;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib; // el diavolo nuevo
+using Microsoft.Xna.Framework;
+using StardewValley;
+using StardewValley.Menus;
 
 namespace RaisedGardenBeds
 {
@@ -77,7 +77,7 @@ namespace RaisedGardenBeds
 		{
 			Log.E($"{ModEntry.Instance.ModManifest.UniqueID} failed in harmony patch method.{Environment.NewLine}{e}");
 		}
-		
+
 		/// <summary>
 		/// Replace logic determining item drop-in actions on garden bed objects.
 		/// </summary>

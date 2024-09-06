@@ -1,18 +1,18 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Serialization;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Netcode;
 using StardewValley;
 using StardewValley.GameData.BigCraftables;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Serialization;
 
 namespace RaisedGardenBeds
 {
-	[XmlType("Mods_Blueberry_RaisedGardenBeds_OutdoorPot")]	// SpaceCore serialisation signature
+	[XmlType("Mods_Blueberry_RaisedGardenBeds_OutdoorPot")] // SpaceCore serialisation signature
 	public class OutdoorPot : StardewValley.Objects.IndoorPot
 	{
 		[Flags]
@@ -146,7 +146,7 @@ namespace RaisedGardenBeds
 		internal const string GenericName = "blueberry.rgb.raisedbed";
 
 
-		public OutdoorPot() : this(variantKey: null, tileLocation: Vector2.Zero) {}
+		public OutdoorPot() : this(variantKey: null, tileLocation: Vector2.Zero) { }
 
 		public OutdoorPot(string variantKey, Vector2 tileLocation)
 		{
@@ -472,7 +472,7 @@ namespace RaisedGardenBeds
 			{
 				return false;
 			}
-			
+
 			// Check to ensure there are no obstructions on this tile
 			bool noTiles = l.IsTileBlockedBy(tile);
 			bool noObjects = !l.Objects.ContainsKey(tile);
@@ -875,7 +875,7 @@ namespace RaisedGardenBeds
 		{
 			return op.hoeDirt.Value.canPlantThisSeedHere(itemId: item.ItemId);
 		}
-		
+
 		/// <summary>
 		/// Set this object's held object to a given item.
 		/// </summary>

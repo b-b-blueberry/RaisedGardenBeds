@@ -1,11 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
 using StardewValley.Menus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace RaisedGardenBeds
 {
@@ -29,7 +29,7 @@ namespace RaisedGardenBeds
 
 
 		public NewRecipeMenu(List<string> variantKeys)
-			: base(x: 0,  y: 0, width: 0,  height: 0)
+			: base(x: 0, y: 0, width: 0, height: 0)
 		{
 			Log.T($"Opened end of night menu: {this.GetType().FullName}");
 
@@ -45,7 +45,7 @@ namespace RaisedGardenBeds
 			{
 				myID = NewRecipeMenu.OkButtonId
 			};
-			
+
 			this._isActive = true;
 			this._timerBeforeStart = 250;
 			Game1.player.completelyStopAnimatingOrDoingAction();
@@ -55,14 +55,14 @@ namespace RaisedGardenBeds
 
 			string craftingString = Game1.content.LoadString("Strings\\UI:LearnedRecipe_crafting");
 			this._titleString = Translations.GetTranslation("menu.title.new");
-			this._itemStrings = 
+			this._itemStrings =
 				this.VariantKeys
 				.ToDictionary(
 					vk => vk,
 					vk => Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe",
 						craftingString,
 						OutdoorPot.GetDisplayNameFromVariantKey(variantKey: vk)));
-			this._itemSprites = 
+			this._itemSprites =
 				this.VariantKeys
 				.ToDictionary(
 					vk => vk,
@@ -132,7 +132,7 @@ namespace RaisedGardenBeds
 				this.exitThisMenu();
 				return;
 			}
-			
+
 			if (this._timerBeforeStart > 0)
 			{
 				this._informationUp = true;
@@ -169,7 +169,7 @@ namespace RaisedGardenBeds
 
 			if (!this._isActive || !this._informationUp)
 				return;
-			
+
 			Game1.player.completelyStopAnimatingOrDoingAction();
 			if (this.OkButton.containsPoint(Game1.getOldMouseX(), Game1.getOldMouseY()))
 			{
@@ -196,7 +196,7 @@ namespace RaisedGardenBeds
 				texture: Game1.fadeToBlackRect,
 				destinationRectangle: new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
 				color: Color.Black * 0.5f);
-			
+
 			if (!this._informationUp && this._isActive && this.StarIcon is not null)
 			{
 				this.StarIcon.draw(b);
@@ -205,7 +205,7 @@ namespace RaisedGardenBeds
 			{
 				if (!this._informationUp)
 					return;
-				
+
 				// Draw popup header
 				const int wh = 16;
 				Vector2 padding = new Vector2(22, -8) * Game1.pixelZoom;
@@ -339,7 +339,7 @@ namespace RaisedGardenBeds
 				int x = this.xPositionOnScreen + (this.width / 2);
 				int y = this.yPositionOnScreen;
 				int yOffset = IClickableMenu.spaceToClearTopBorder;
-				
+
 				foreach (string variantKey in this.VariantKeys)
 				{
 					yOffset += (int)Game1.dialogueFont.MeasureString(_itemStrings[variantKey]).Y + (paddingY * Game1.pixelZoom)
@@ -369,7 +369,7 @@ namespace RaisedGardenBeds
 					yOffset += (Game1.smallestTileSize * Game1.pixelZoom);
 				}
 				this.OkButton.draw(b);
-				
+
 				if (!Game1.options.SnappyMenus)
 				{
 					Game1.mouseCursorTransparency = 1f;
