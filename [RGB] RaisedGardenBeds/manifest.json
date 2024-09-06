@@ -1,7 +1,7 @@
 ﻿{
 	"Name": "[RGB] Raised Garden Beds",
 	"Author": "blueberry",
-	"Version": "1.0.5",
+	"Version": "1.1.0",
 	"Description": "Starter pack for Raised Garden Beds.",
 	"UniqueID": "blueberry.RaisedGardenBeds.RGB",
 	"UpdateKeys": [ "Nexus:????" ],
