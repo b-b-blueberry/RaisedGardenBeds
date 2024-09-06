@@ -32,6 +32,10 @@ namespace RaisedGardenBeds
 		/// Event entries are keyed by event ID and conditions.
 		/// </summary>
 		internal static List<Dictionary<string, string>> EventData = null;
+		/// <summary>
+		/// Flag raised when item definitions are added to game big craftables dictionary.
+		/// </summary>
+		internal static bool IsDataAdded;
 
 		AssetManager assetManager;
 
@@ -158,15 +162,19 @@ namespace RaisedGardenBeds
 			}
 		}
 
+		private void GameLoop_ReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
+		{
+			ModEntry.IsDataAdded = false;
+		}
+
 		private void Specialized_LoadStageChanged(object sender, LoadStageChangedEventArgs e)
 		{
 			if (e.NewStage == StardewModdingAPI.Enums.LoadStage.Loaded)
 			{
 				Log.T("Invalidating assets on connected for multiplayer peer.");
 
-				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "BigCraftablesInformation"));
+				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "BigCraftables"));
 				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
-				this.Helper.GameContent.InvalidateCache(Path.Combine("TileSheets", "Craftables"));
 			}
 		}
 
@@ -225,6 +233,7 @@ namespace RaisedGardenBeds
 			this.Helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
 			this.Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
 			this.Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
+			this.Helper.Events.GameLoop.ReturnedToTitle += this.GameLoop_ReturnedToTitle;
 			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
 
 			// Console commands

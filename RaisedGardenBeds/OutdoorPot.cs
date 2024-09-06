@@ -87,11 +87,6 @@ namespace RaisedGardenBeds
 		**********/
 
 		/// <summary>
-		/// Dynamic dummy index in game content craftables spritesheet for the generic OutdoorPot object.
-		/// </summary>
-		[XmlIgnore]
-		public static int BaseParentSheetIndex = -1;
-		/// <summary>
 		/// Array of axes that contain a neighbouring OutdoorPot object, projecting outwards from each corner of the object tile.
 		/// </summary>
 		[XmlIgnore]
@@ -157,23 +152,23 @@ namespace RaisedGardenBeds
 			this.initNetFields();
 
 			// Object (Vector2, int, bool) : Object ()
-			this.ParentSheetIndex = OutdoorPot.BaseParentSheetIndex;
+			this.ItemId = OutdoorPot.GetNameFromVariantKey(variantKey);
 			this.TileLocation = tileLocation;
 			this.CanBeSetDown = true;
 			this.bigCraftable.Value = true;
 
-			Game1.bigCraftableData.TryGetValue(OutdoorPot.GenericName, out BigCraftableData objectInformation);
-			if (objectInformation is not null)
+			Game1.bigCraftableData.TryGetValue(this.ItemId, out BigCraftableData data);
+			if (data is not null)
 			{
-				this.Name = objectInformation.Name;
-				this.Price = objectInformation.Price;
+				this.Name = data.Name;
+				this.Price = data.Price;
 				this.Edibility = StardewValley.Object.inedible;
 				this.Type = "Crafting";
 				this.Category = StardewValley.Object.CraftingCategory;
-				this.setOutdoors.Value = objectInformation.CanBePlacedOutdoors;
-				this.setIndoors.Value = objectInformation.CanBePlacedIndoors;
-				this.Fragility = objectInformation.Fragility;
-				this.isLamp.Value = objectInformation.IsLamp;
+				this.setOutdoors.Value = data.CanBePlacedOutdoors;
+				this.setIndoors.Value = data.CanBePlacedIndoors;
+				this.Fragility = data.Fragility;
+				this.isLamp.Value = data.IsLamp;
 				this.IsRecipe = false;
 			}
 
@@ -194,6 +189,7 @@ namespace RaisedGardenBeds
 		{
 			this.VariantKey.Value = variantKey;
 			this.boundingBox.Value = new Rectangle((int)tileLocation.X * Game1.tileSize, (int)tileLocation.Y * Game1.tileSize, Game1.tileSize, Game1.tileSize);
+			this.displayName = OutdoorPot.GetDisplayNameFromVariantKey(variantKey);
 		}
 
 		protected override void initNetFields()
@@ -455,7 +451,7 @@ namespace RaisedGardenBeds
 				// Accept objects if not holding any seeds or crops
 				if (!probe)
 				{
-					if (this.heldObject.Value?.ParentSheetIndex == dropInItem.ParentSheetIndex)
+					if (this.heldObject.Value?.ItemId == dropInItem.ItemId)
 					{
 						return false;
 					}
@@ -877,11 +873,6 @@ namespace RaisedGardenBeds
 		public static bool CanAcceptItemNoSeeds(Item item)
 		{
 			return !OutdoorPot.CanAcceptItemOrSeed(item) && item is StardewValley.Object o && ModEntry.Config.SprinklersEnabled && o.IsSprinkler();
-		}
-
-		public static bool CanAcceptSeed(Item item, OutdoorPot op)
-		{
-			return op.hoeDirt.Value.canPlantThisSeedHere(itemId: item.ItemId);
 		}
 
 		/// <summary>

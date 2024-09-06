@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using StardewValley.GameData.BigCraftables;
 
 namespace RaisedGardenBeds
 {
@@ -89,8 +90,7 @@ namespace RaisedGardenBeds
 		public bool CanEdit<T>(IAssetInfo asset)
 		{
 			return asset.Name.IsEquivalentTo(GameContentEventDataPath)
-				|| asset.Name.IsEquivalentTo(Path.Combine("TileSheets", "Craftables"))
-				|| asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftablesInformation"))
+				|| asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftables"))
 				|| asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes"))
 				// Also patch the event dictionary for any locations with an entry in our event definitions
 				|| (asset.Name.StartsWith(Path.Combine("Data", "Events"))
@@ -140,76 +140,54 @@ namespace RaisedGardenBeds
 			Game data
 			********/
 
-			int id = OutdoorPot.BaseParentSheetIndex;
-
-			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftablesInformation")))
+			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftables")))
 			{
 				if (ModEntry.ItemDefinitions is null)
 					return;
 
-				string[] fields;
-				var data = asset.AsDictionary<int, string>().Data;
+				var data = asset.AsDictionary<string, BigCraftableData>().Data;
 
-				// Set or reset the item ID for the generic object to some first best available index
-				id = OutdoorPot.BaseParentSheetIndex = data.Keys.Max() + 2;
-
-				string name, description;
-
-				// Patch generic object entry into bigcraftables file, including display name and description from localisations file
-				name = Translations.GetTranslation("item.name");
-				description = Translations.GetTranslation("item.description.default");
-				fields = data.First().Value.Split('/'); // Use existing data as a template; most fields are common or unused
-				fields[0] = OutdoorPot.GenericName;
-				fields[4] = description;
-				fields[8] = name;
-				data[id] = string.Join("/", fields);
-
-				// Patch in dummy object entries after generic object entry
-				for (int i = 1; i < ModEntry.ItemDefinitions.Count; ++i)
+				// Add all object variants to big craftables dictionary
+				foreach (var entry in ModEntry.ItemDefinitions)
 				{
-					ItemDefinition d = ModEntry.ItemDefinitions[ModEntry.ItemDefinitions.Keys.ElementAt(i)];
-					name = Translations.GetNameTranslation(data: d);
-					fields = data[id].Split('/');
-					fields[4] = description;
-					fields[8] = name;
-					data[id + i] = string.Join("/", fields);
+					string name = OutdoorPot.GetNameFromVariantKey(entry.Key);
+					data.Add(name, new()
+					{
+						Name = name,
+						DisplayName = Translations.GetTranslation("item.name"),
+						Description = Translations.GetTranslation("item.description.default")
+					});
 				}
 
-				// Don't remove the generic craftable from data lookup, since it's used later for crafting recipes and defaults
+				ModEntry.IsDataAdded = true;
 
 				return;
 			}
 			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes")))
 			{
-				if (ModEntry.ItemDefinitions is null || id < 0)
+				if (ModEntry.ItemDefinitions is null || !ModEntry.IsDataAdded)
 					return;
-
-				// As above for the craftables dictionary, the recipes dictionary needs to have
-				// our varieties patched in to have them appear.
-				// Since all objects share a single ParentSheetIndex, each crafting recipe will normally
-				// only produce a generic/wooden object.
-				// This is handled in HarmonyPatches.CraftingPage_ClickCraftingRecipe_Prefix, which
-				// is also needed to produce an OutdoorPot instance rather than a StardewValley.Object.
 
 				// Add crafting recipes for all object variants
 				var data = asset.AsDictionary<string, string>().Data;
-				foreach (KeyValuePair<string, ItemDefinition> idAndFields in ModEntry.ItemDefinitions)
+				foreach (KeyValuePair<string, ItemDefinition> entry in ModEntry.ItemDefinitions)
 				{
-					string[] newFields =
+					string name = OutdoorPot.GetNameFromVariantKey(entry.Key);
+					string[] fields =
 					[	// Crafting ingredients:
-						ItemDefinition.ParseRecipeIngredients(data: idAndFields.Value),
+						ItemDefinition.ParseRecipeIngredients(data: entry.Value),
 						// Unused field:
 						"blue berry",
 						// Crafted item ID and quantity:
-						$"{OutdoorPot.BaseParentSheetIndex} {idAndFields.Value.RecipeCraftedCount}",
+						$"{name} {entry.Value.RecipeCraftedCount}",
 						// Recipe is bigCraftable:
 						"true",
 						// Recipe conditions (we ignore these):
 						"blue berry",
 						// Recipe display name:
-						Translations.GetNameTranslation(data: idAndFields.Value)
+						Translations.GetNameTranslation(data: entry.Value)
 					];
-					data[OutdoorPot.GetNameFromVariantKey(idAndFields.Key)] = string.Join("/", newFields);
+					data[name] = string.Join("/", fields);
 				}
 
 				return;
@@ -220,8 +198,7 @@ namespace RaisedGardenBeds
 				// Patch our event data into whatever location happens to match the one specified.
 				// Event tokenisation is handled in the Edit block for GameContentEventDataPath.
 
-				if (ModEntry.EventData is not null
-					&& ModEntry.EventData.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
+				if (ModEntry.EventData?.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
 				{
 					string key = $"{ModEntry.EventRootId}{ModEntry.EventData.IndexOf(eventData)}/{eventData["Conditions"]}";
 					asset.AsDictionary<string, string>().Data[key] = eventData["Script"];

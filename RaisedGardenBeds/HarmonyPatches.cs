@@ -32,11 +32,7 @@ namespace RaisedGardenBeds
 					type: HarmonyPatchType.Prefix,
 					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(StardewValley.Utility.isThereAnObjectHereWhichAcceptsThisItem)),
 					patch: nameof(HarmonyPatches.Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix)),
-				new(
-					type: HarmonyPatchType.Prefix,
-					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(GameLocation.CanPlantSeedsHere)),
-					patch: nameof(HarmonyPatches.Utility_IsViableSeedSpot_Prefix)),
-				
+
 				// Object
 				new(
 					type: HarmonyPatchType.Prefix,
@@ -112,28 +108,6 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
-		/// Add logic to consider new conditions for planting seeds in garden bed objects.
-		/// </summary>
-		public static bool Utility_IsViableSeedSpot_Prefix(
-			GameLocation location,
-			Vector2 tileLocation,
-			Item item)
-		{
-			try
-			{
-				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o is not null && o is OutdoorPot op)
-				{
-					return OutdoorPot.CanAcceptItemOrSeed(item) && OutdoorPot.CanAcceptSeed(item: item, op: op) && OutdoorPot.CanAcceptAnything(op: op);
-				}
-			}
-			catch (Exception e)
-			{
-				HarmonyPatches.ErrorHandler(e);
-			}
-			return true;
-		}
-
-		/// <summary>
 		/// Replace logic for garden bed objects being watered by sprinklers.
 		/// </summary>
 		public static bool Object_ApplySprinkler_Prefix(
@@ -164,13 +138,13 @@ namespace RaisedGardenBeds
 		public static void GameLocation_IsTileOccupiedForPlacement_Postfix(
 			GameLocation __instance,
 			ref bool __result,
-			Vector2 tile,
-			StardewValley.Object to_place)
+			Vector2 tile)
 		{
 			if (__instance.Objects.TryGetValue(tile, out StardewValley.Object o) && o is OutdoorPot op)
 			{
-				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(to_place)
-					&& op.hoeDirt.Value.canPlantThisSeedHere(itemId: to_place.ItemId, isFertilizer: to_place.Category == StardewValley.Object.fertilizerCategory);
+				Item item = Game1.player.ActiveItem;
+				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(item)
+					&& op.hoeDirt.Value.canPlantThisSeedHere(itemId: item.ItemId, isFertilizer: item.Category == StardewValley.Object.fertilizerCategory);
 				if (OutdoorPot.CanAcceptAnything(op: op) && isPlantable)
 				{
 					__result = false;
