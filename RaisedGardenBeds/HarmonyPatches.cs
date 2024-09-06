@@ -205,7 +205,7 @@ namespace RaisedGardenBeds
 					pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromName(pair.Value.name);
 					pair.Value.description = OutdoorPot.GetRawDescription();
 				});
-				matchesPerDict[i++] = matches.Count();
+				matchesPerDict[i++] = matches.Count;
 			}
 			Log.T($"Found {string.Join("/", matchesPerDict)} garden beds in crafting menu pages ({unlockedCount} unlocked).");
 		}
@@ -229,7 +229,7 @@ namespace RaisedGardenBeds
 				if (!recipe.name.StartsWith(OutdoorPot.GenericName))
 					return true;
 
-				OutdoorPot item = new OutdoorPot(
+				OutdoorPot item = new(
 					variantKey: OutdoorPot.GetVariantKeyFromName(recipe.name),
 					tileLocation: Vector2.Zero);
 
@@ -247,12 +247,15 @@ namespace RaisedGardenBeds
 				{
 					___heldItem.addToStack(item);
 				}
+
 				if (Game1.player.craftingRecipes.ContainsKey(recipe.name))
 				{
 					Game1.player.craftingRecipes[recipe.name] += recipe.numberProducedPerCraft;
 				}
+
 				Game1.stats.checkForCraftingAchievements();
-				if (Game1.options.gamepadControls && ___heldItem is not null && Game1.player.couldInventoryAcceptThisItem(___heldItem))
+
+				if (Game1.options.gamepadControls && Game1.player.couldInventoryAcceptThisItem(___heldItem))
 				{
 					Game1.player.addItemToInventoryBool(___heldItem);
 					___heldItem = null;
