@@ -185,13 +185,13 @@ namespace RaisedGardenBeds
 		public static void CraftingPage_LayoutRecipes_Postfix(
 			CraftingPage __instance)
 		{
-			int unlockedCount = Game1.player.craftingRecipes.Keys.Count(c => c.StartsWith(OutdoorPot.GenericName));
+			int unlockedCount = Game1.player.craftingRecipes.Keys.Count(OutdoorPot.IsOutdoorPotByName);
 			int[] matchesPerDict = new int[__instance.pagesOfCraftingRecipes.Count];
 			int i = 0;
 			foreach (Dictionary<ClickableTextureComponent, CraftingRecipe> dict in __instance.pagesOfCraftingRecipes)
 			{
 				List<KeyValuePair<ClickableTextureComponent, CraftingRecipe>> matches = dict
-					.Where(pair => pair.Value.name.StartsWith(OutdoorPot.GenericName))
+					.Where(pair => OutdoorPot.IsOutdoorPotByName(pair.Value.name))
 					.ToList();
 				matches.ForEach(pair =>
 				{

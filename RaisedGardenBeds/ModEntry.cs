@@ -505,8 +505,8 @@ namespace RaisedGardenBeds
 			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
 
 			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys
-				.Where(recipe => recipe.StartsWith(OutdoorPot.GenericName))
-				.Select(recipe => OutdoorPot.GetVariantKeyFromName(recipe));
+				.Where(OutdoorPot.IsOutdoorPotByName)
+				.Select(OutdoorPot.GetVariantKeyFromName);
 			if (!unlockedKeys.Any())
 			{
 				Log.D($"No raised bed recipes are unlocked! Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");

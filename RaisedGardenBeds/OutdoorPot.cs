@@ -282,6 +282,14 @@ namespace RaisedGardenBeds
 		}
 
 		/// <summary>
+		/// Checks whether an item name matches format used by garden bed objects.
+		/// </summary>
+		public static bool IsOutdoorPotByName(string name)
+		{
+			return name.StartsWith(OutdoorPot.GenericName);
+		}
+
+		/// <summary>
 		/// Get localised display name for this object variant.
 		/// </summary>
 		protected override string loadDisplayName()
