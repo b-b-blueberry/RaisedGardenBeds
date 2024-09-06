@@ -146,7 +146,7 @@ namespace RaisedGardenBeds
 			}
 
 			this._oldMouseState = Game1.input.GetMouseState();
-			if (this._isActive && !this._informationUp && this.StarIcon != null)
+			if (this._isActive && !this._informationUp && this.StarIcon is not null)
 			{
 				if (this.StarIcon.containsPoint(Game1.getOldMouseX(), Game1.getOldMouseY()))
 				{
@@ -157,7 +157,7 @@ namespace RaisedGardenBeds
 					this.StarIcon.sourceRect.X = 310;
 				}
 			}
-			if (this._isActive && this.StarIcon != null && !this._informationUp
+			if (this._isActive && this.StarIcon is not null && !this._informationUp
 				&& (this._oldMouseState.LeftButton == ButtonState.Pressed || (Game1.options.gamepadControls && Game1.oldPadState.IsButtonDown(Buttons.A)))
 				&& this.StarIcon.containsPoint(this._oldMouseState.X, this._oldMouseState.Y))
 			{
@@ -174,7 +174,7 @@ namespace RaisedGardenBeds
 			if (this.OkButton.containsPoint(Game1.getOldMouseX(), Game1.getOldMouseY()))
 			{
 				this.OkButton.scale = Math.Min(1.1f, this.OkButton.scale + 0.05f);
-				if ((this._oldMouseState.LeftButton == ButtonState.Pressed || (Game1.options.gamepadControls && Game1.oldPadState.IsButtonDown(Buttons.A))) && readyToClose())
+				if ((this._oldMouseState.LeftButton == ButtonState.Pressed || (Game1.options.gamepadControls && Game1.oldPadState.IsButtonDown(Buttons.A))) && this.readyToClose())
 				{
 					this.OkButtonClicked();
 				}
@@ -197,7 +197,7 @@ namespace RaisedGardenBeds
 				destinationRectangle: new Rectangle(0, 0, Game1.uiViewport.Width, Game1.uiViewport.Height),
 				color: Color.Black * 0.5f);
 			
-			if (!this._informationUp && this._isActive && this.StarIcon != null)
+			if (!this._informationUp && this._isActive && this.StarIcon is not null)
 			{
 				this.StarIcon.draw(b);
 			}
@@ -386,7 +386,7 @@ namespace RaisedGardenBeds
 
 		public static void Push(List<string> variantKeys)
 		{
-			if (variantKeys == null)
+			if (variantKeys is null)
 				return;
 
 			for (int i = variantKeys.Count - 1; i >= 0; --i)

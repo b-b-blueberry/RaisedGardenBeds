@@ -11,62 +11,54 @@ namespace RaisedGardenBeds
 {
 	public static class HarmonyPatches
 	{
-		internal class PatchTemplate
+		internal class PatchTemplate(HarmonyPatchType type, MethodInfo original, string patch = null, HarmonyMethod method = null)
 		{
-			public readonly HarmonyPatchType type;
-			public readonly MethodInfo original;
-			public readonly string patch;
-			public readonly HarmonyMethod method;
-
-			public PatchTemplate(HarmonyPatchType type, MethodInfo original, string patch = null, HarmonyMethod method = null)
-			{
-				this.type = type;
-				this.original = original;
-				this.patch = patch ?? method.methodName;
-				this.method = method ?? new HarmonyMethod(
-					methodType: typeof(HarmonyPatches),
-					methodName: patch);
-			}
+			public readonly HarmonyPatchType type = type;
+			public readonly MethodInfo original = original;
+			public readonly string patch = patch ?? method.methodName;
+			public readonly HarmonyMethod method = method ?? new HarmonyMethod(
+				methodType: typeof(HarmonyPatches),
+				methodName: patch);
 		}
 
 		internal static void Patch(string id)
 		{
-			Harmony harmony = new Harmony(id);
+			Harmony harmony = new(id: id);
 
-			List<PatchTemplate> patches = new List<PatchTemplate>
-			{
+			List<PatchTemplate> patches =
+			[
 				// Utility
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Prefix,
 					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(StardewValley.Utility.isThereAnObjectHereWhichAcceptsThisItem)),
 					patch: nameof(HarmonyPatches.Utility_IsThereAnObjectHereWhichAcceptsThisItem_Prefix)),
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Prefix,
 					original: AccessTools.Method(typeof(StardewValley.Utility), nameof(GameLocation.CanPlantSeedsHere)),
 					patch: nameof(HarmonyPatches.Utility_IsViableSeedSpot_Prefix)),
 				
 				// Object
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Prefix,
 					original: AccessTools.Method(typeof(StardewValley.Object), nameof(StardewValley.Object.ApplySprinkler)),
 					patch: nameof(HarmonyPatches.Object_ApplySprinkler_Prefix)),
 				
 				// GameLocation
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Postfix,
 					original: AccessTools.Method(typeof(StardewValley.GameLocation), nameof(StardewValley.GameLocation.IsTileOccupiedBy)),
 					patch: nameof(HarmonyPatches.GameLocation_IsTileOccupiedForPlacement_Postfix)),
 				
 				// CraftingPage
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Postfix,
 					original: AccessTools.Method(typeof(StardewValley.Menus.CraftingPage), "layoutRecipes"),
 					patch: nameof(HarmonyPatches.CraftingPage_LayoutRecipes_Postfix)),
-				new PatchTemplate(
+				new(
 					type: HarmonyPatchType.Prefix,
 					original: AccessTools.Method(typeof(StardewValley.Menus.CraftingPage), "clickCraftingRecipe"),
 					patch: nameof(HarmonyPatches.CraftingPage_ClickCraftingRecipe_Prefix)),
-			};
+			];
 
 			Log.T(patches.Aggregate("Applying Harmony patches:", (str, p) => $"{str}{Environment.NewLine}{p.patch}"));
 
@@ -99,7 +91,7 @@ namespace RaisedGardenBeds
 			try
 			{
 				Vector2 tileLocation = new Vector2(x / Game1.tileSize, y / Game1.tileSize);
-				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o is OutdoorPot op)
 				{
 					if (!OutdoorPot.CanAcceptItemOrSeed(item: item) && OutdoorPot.CanAcceptAnything(op: op))
 					{
@@ -129,7 +121,7 @@ namespace RaisedGardenBeds
 		{
 			try
 			{
-				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+				if (location.Objects.TryGetValue(tileLocation, out StardewValley.Object o) && o is not null && o is OutdoorPot op)
 				{
 					return OutdoorPot.CanAcceptItemOrSeed(item) && OutdoorPot.CanAcceptSeed(item: item, op: op) && OutdoorPot.CanAcceptAnything(op: op);
 				}
@@ -175,7 +167,7 @@ namespace RaisedGardenBeds
 			Vector2 tile,
 			StardewValley.Object to_place)
 		{
-			if (__instance.Objects.TryGetValue(tile, out StardewValley.Object o) && o != null && o is OutdoorPot op)
+			if (__instance.Objects.TryGetValue(tile, out StardewValley.Object o) && o is OutdoorPot op)
 			{
 				bool isPlantable = OutdoorPot.CanAcceptItemOrSeed(to_place)
 					&& op.hoeDirt.Value.canPlantThisSeedHere(itemId: to_place.ItemId, isFertilizer: to_place.Category == StardewValley.Object.fertilizerCategory);
@@ -247,7 +239,7 @@ namespace RaisedGardenBeds
 				{
 					Game1.playSound("coin");
 				}
-				if (___heldItem == null)
+				if (___heldItem is null)
 				{
 					___heldItem = item;
 				}
@@ -260,7 +252,7 @@ namespace RaisedGardenBeds
 					Game1.player.craftingRecipes[recipe.name] += recipe.numberProducedPerCraft;
 				}
 				Game1.stats.checkForCraftingAchievements();
-				if (Game1.options.gamepadControls && ___heldItem != null && Game1.player.couldInventoryAcceptThisItem(___heldItem))
+				if (Game1.options.gamepadControls && ___heldItem is not null && Game1.player.couldInventoryAcceptThisItem(___heldItem))
 				{
 					Game1.player.addItemToInventoryBool(___heldItem);
 					___heldItem = null;

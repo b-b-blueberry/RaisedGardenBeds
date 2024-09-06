@@ -63,7 +63,7 @@ namespace RaisedGardenBeds
 				string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
 				foreach (string key in keys)
 				{
-					data.Add(key, new Dictionary<string, string>());
+					data.Add(key, []);
 				}
 
 				return (T)(object)data;
@@ -78,7 +78,7 @@ namespace RaisedGardenBeds
 				string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
 				foreach (string key in keys)
 				{
-					data.Add(key, new Dictionary<string, Dictionary<string, string>>());
+					data.Add(key, []);
 				}
 
 				return (T)(object)data;
@@ -95,7 +95,7 @@ namespace RaisedGardenBeds
 				// Also patch the event dictionary for any locations with an entry in our event definitions
 				|| (asset.Name.StartsWith(Path.Combine("Data", "Events"))
 					&& Path.GetFileNameWithoutExtension(asset.Name.ToString()) is string where
-					&& ModEntry.EventData != null && ModEntry.EventData.Any(e => e["Where"] == where));
+					&& ModEntry.EventData is not null && ModEntry.EventData.Any(e => e["Where"] == where));
 		}
 
 		public void Edit(IAssetData asset)
@@ -144,7 +144,7 @@ namespace RaisedGardenBeds
 
 			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftablesInformation")))
 			{
-				if (ModEntry.ItemDefinitions == null)
+				if (ModEntry.ItemDefinitions is null)
 					return;
 
 				string[] fields;
@@ -181,7 +181,7 @@ namespace RaisedGardenBeds
 			}
 			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes")))
 			{
-				if (ModEntry.ItemDefinitions == null || id < 0)
+				if (ModEntry.ItemDefinitions is null || id < 0)
 					return;
 
 				// As above for the craftables dictionary, the recipes dictionary needs to have
@@ -195,8 +195,8 @@ namespace RaisedGardenBeds
 				var data = asset.AsDictionary<string, string>().Data;
 				foreach (KeyValuePair<string, ItemDefinition> idAndFields in ModEntry.ItemDefinitions)
 				{
-					string[] newFields = new string[]
-					{	// Crafting ingredients:
+					string[] newFields =
+					[	// Crafting ingredients:
 						ItemDefinition.ParseRecipeIngredients(data: idAndFields.Value),
 						// Unused field:
 						"blue berry",
@@ -208,7 +208,7 @@ namespace RaisedGardenBeds
 						"blue berry",
 						// Recipe display name:
 						Translations.GetNameTranslation(data: idAndFields.Value)
-					};
+					];
 					data[OutdoorPot.GetNameFromVariantKey(idAndFields.Key)] = string.Join("/", newFields);
 				}
 
@@ -220,7 +220,7 @@ namespace RaisedGardenBeds
 				// Patch our event data into whatever location happens to match the one specified.
 				// Event tokenisation is handled in the Edit block for GameContentEventDataPath.
 
-				if (ModEntry.EventData != null
+				if (ModEntry.EventData is not null
 					&& ModEntry.EventData.FirstOrDefault(e => e["Where"] == where) is Dictionary<string, string> eventData)
 				{
 					string key = $"{ModEntry.EventRootId}{ModEntry.EventData.IndexOf(eventData)}/{eventData["Conditions"]}";

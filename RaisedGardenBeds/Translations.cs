@@ -36,11 +36,11 @@ namespace RaisedGardenBeds
 
 		public static void SetForLanguage(LocalizedContentManager.LanguageCode code)
 		{
-			Translations.LanguageCodesToTry = new[]
-			{
+			Translations.LanguageCodesToTry =
+			[
 				code,
 				Translations.DefaultLanguageCode
-			};
+			];
 		}
 
 		/// <summary>
@@ -48,7 +48,7 @@ namespace RaisedGardenBeds
 		/// </summary>
 		public static void LoadTranslationPacks()
 		{
-			Log.T($"Loading translation packs for locale '{LocalizedContentManager.CurrentLanguageCode.ToString()}'.");
+			Log.T($"Loading translation packs for locale '{LocalizedContentManager.CurrentLanguageCode}'.");
 			Log.T($"Translators should target these paths:{Environment.NewLine}\"Target\": \"{AssetManager.GameContentCommonTranslationDataPath}\"{Environment.NewLine}\"Target\": \"{AssetManager.GameContentItemTranslationDataPath}\"");
 
 			Translations.CommonTranslations = Game1.content.Load
@@ -100,11 +100,9 @@ namespace RaisedGardenBeds
 		{
 			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
-				Dictionary<string, string> entries;
-				string translation;
 
-				if (Translations.CommonTranslations.TryGetValue(lc.ToString(), out entries)
-					&& entries.TryGetValue(key, out translation) && !string.IsNullOrWhiteSpace(translation))
+				if (Translations.CommonTranslations.TryGetValue(lc.ToString(), out Dictionary<string, string> entries)
+					&& entries.TryGetValue(key, out string translation) && !string.IsNullOrWhiteSpace(translation))
 				{
 					return tokens?.Length > 0 ? string.Format(translation, tokens) : translation;
 				}
@@ -123,15 +121,11 @@ namespace RaisedGardenBeds
 
 			foreach (LocalizedContentManager.LanguageCode lc in Translations.LanguageCodesToTry)
 			{
-				Dictionary<string, Dictionary<string, string>> packs;
-				Dictionary<string, string> items;
-				string translation;
-
-				if (Translations.ItemTranslations.TryGetValue(lc.ToString(), out packs) && packs != null
-					&& packs.TryGetValue(pack, out items) && items != null
-					&& items.TryGetValue(item, out translation) && !string.IsNullOrWhiteSpace(translation))
+				if (Translations.ItemTranslations.TryGetValue(lc.ToString(), out Dictionary<string, Dictionary<string, string>> packs) && packs is not null
+					&& packs.TryGetValue(pack, out Dictionary<string, string> items) && items is not null
+					&& items.TryGetValue(item, out string translation) && !string.IsNullOrWhiteSpace(translation))
 				{
-					return Translations.GetTranslation("item.name.variant", tokens: new[] { translation ?? data.LocalName });
+					return Translations.GetTranslation("item.name.variant", tokens: [translation ?? data.LocalName]);
 				}
 			}
 			return data.LocalName;

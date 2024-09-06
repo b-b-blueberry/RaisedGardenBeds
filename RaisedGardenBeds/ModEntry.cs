@@ -12,7 +12,6 @@ namespace RaisedGardenBeds
 {
 	public class ModEntry : Mod
 	{
-
         // common
         internal static ModEntry Instance;
 		internal static Config Config;
@@ -65,7 +64,7 @@ namespace RaisedGardenBeds
             string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
             foreach (string key in keys)
             {
-                data.Add(key, new Dictionary<string, string>());
+                data.Add(key, []);
             }
             return data;
         }
@@ -80,7 +79,7 @@ namespace RaisedGardenBeds
             string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
             foreach (string key in keys)
             {
-                data.Add(key, new Dictionary<string, Dictionary<string, string>>());
+                data.Add(key, []);
             }
             return data;
         }
@@ -101,11 +100,11 @@ namespace RaisedGardenBeds
             }
             if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
             {
-				e.LoadFrom(CTData, AssetLoadPriority.Low);
+				e.LoadFrom(this.CTData, AssetLoadPriority.Low);
             }
             if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
             {
-                e.LoadFrom(ITData, AssetLoadPriority.Low);
+				e.LoadFrom(this.ITData, AssetLoadPriority.Low);
             }
             e.Edit(assetManager.Edit);
         }
@@ -134,10 +133,7 @@ namespace RaisedGardenBeds
 			// Log root event status
 			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
 			{
-				bool checkRawConditions (string s)
-				{
-					return Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != "-1";
-				};
+				bool checkRawConditions(string s) => Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != "-1"; ;
 				string conditions = ModEntry.EventData[0]["Conditions"];
 				string checkedConditions = string.Join("/",
 					conditions
@@ -200,7 +196,7 @@ namespace RaisedGardenBeds
 		{
 			Log.T("Loading mod-provided APIs.");
 			ISpaceCoreAPI spacecoreAPI = this.Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
-			if (spacecoreAPI == null)
+			if (spacecoreAPI is null)
 			{
 				// Skip all mod behaviours if we fail to load the objects
 				Log.E($"Couldn't access mod-provided API for SpaceCore.{Environment.NewLine}Garden beds will not be available, and no changes will be made.");
@@ -253,7 +249,7 @@ namespace RaisedGardenBeds
 		private void AddGenericModConfigMenu()
 		{
 			IGenericModConfigMenuApi modconfigAPI = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
-			if (modconfigAPI != null)
+			if (modconfigAPI is not null)
 			{
 				modconfigAPI.Register(
 					mod: this.ModManifest,
@@ -273,8 +269,8 @@ namespace RaisedGardenBeds
 					string description = Translations.GetTranslation($"config.{key}.description", defaultToNull: true);
 					modconfigAPI.AddBoolOption(
 						mod: this.ModManifest,
-						name: ()=>Translations.GetTranslation($"config.{key}.name"),
-						tooltip: ()=>string.IsNullOrWhiteSpace(description) ? null : description,
+						name: () => Translations.GetTranslation($"config.{key}.name"),
+						tooltip: () => string.IsNullOrWhiteSpace(description) ? null : description,
 						getValue: () => (bool)property.GetValue(ModEntry.Config),
 						setValue: (bool value) => property.SetValue(ModEntry.Config, value: value));
 				}
@@ -306,8 +302,8 @@ namespace RaisedGardenBeds
 
 		public void LoadContentPacks()
 		{
-			ModEntry.ItemDefinitions = new Dictionary<string, ItemDefinition>();
-			ModEntry.Sprites = new Dictionary<string, Texture2D>();
+			ModEntry.ItemDefinitions = [];
+			ModEntry.Sprites = [];
 
 			List<IContentPack> contentPacks = this.Helper.ContentPacks.GetOwned().ToList();
 			foreach (IContentPack contentPack in contentPacks)
@@ -346,7 +342,7 @@ namespace RaisedGardenBeds
 					warnMessage = $"Found {difference} partially-defined garden beds.";
 				}
 
-				if (warnMessage != null)
+				if (warnMessage is not null)
 				{
 					Log.W(warnMessage);
 
@@ -428,7 +424,7 @@ namespace RaisedGardenBeds
 
 		public static void AddDefaultRecipes()
 		{
-			List<string> recipesToAdd = new List<string>();
+			List<string> recipesToAdd = [];
 			string[] eventsSeen = Game1.player.eventsSeen.ToArray();
 			string precondition = $"{ModEntry.EventRootId}/{ModEntry.EventData[0]["Conditions"]}";
 			string rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
@@ -460,7 +456,7 @@ namespace RaisedGardenBeds
 
 		public static List<string> AddNewAvailableRecipes()
 		{
-			List<string> newVariants = new List<string>();
+			List<string> newVariants = [];
 			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
 			{
 				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
@@ -474,7 +470,7 @@ namespace RaisedGardenBeds
 				}
 
 				int eventID = ModEntry.EventRootId + i;
-				string eventKey = $"{eventID.ToString()}/{ModEntry.ItemDefinitions[variantKey].RecipeConditions}";
+				string eventKey = $"{eventID}/{ModEntry.ItemDefinitions[variantKey].RecipeConditions}";
 				string precondition = Game1.getFarm().checkEventPrecondition(eventKey);
 				if (precondition != "-1")
 				{
@@ -487,7 +483,7 @@ namespace RaisedGardenBeds
 
 		private static void Give(string variantKey, int quantity)
 		{
-			OutdoorPot item = new OutdoorPot(variantKey: variantKey, tileLocation: Vector2.Zero)
+			OutdoorPot item = new(variantKey: variantKey, tileLocation: Vector2.Zero)
 			{
 				Stack = quantity
 			};

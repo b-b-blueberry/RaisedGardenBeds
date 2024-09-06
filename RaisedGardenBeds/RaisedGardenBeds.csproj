@@ -10,6 +10,11 @@
 		<EnableHarmony>true</EnableHarmony>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisLevel>6.0</AnalysisLevel>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.2.0" />
