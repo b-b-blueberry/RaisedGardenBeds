@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>_CP__RaisedGardenBeds_English</AssemblyName>
-    <RootNamespace>_CP__RaisedGardenBeds_English</RootNamespace>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>RaisedGardenBeds_RGB</RootNamespace>
     <Version>1.1.0</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
@@ -10,6 +10,16 @@
     <EnableHarmony>true</EnableHarmony>
     <IgnoreModFilePatterns>\.dll$, \.pdb$</IgnoreModFilePatterns>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="sprites.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="sprites.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.1.0" />
