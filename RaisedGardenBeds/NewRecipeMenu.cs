@@ -31,8 +31,6 @@ namespace RaisedGardenBeds
 		public NewRecipeMenu(List<string> variantKeys)
 			: base(x: 0, y: 0, width: 0, height: 0)
 		{
-			Log.T($"Opened end of night menu: {this.GetType().FullName}");
-
 			Game1.player.team.endOfNightStatus.UpdateState(ModEntry.EndOfNightState);
 			this.VariantKeys = variantKeys;
 			this.width = (int)Dimensions.X;
@@ -69,7 +67,6 @@ namespace RaisedGardenBeds
 
 		protected override void cleanupBeforeExit()
 		{
-			Log.T("Exiting end of night menu.");
 			base.cleanupBeforeExit();
 		}
 

@@ -56,8 +56,6 @@ namespace RaisedGardenBeds
 					patch: nameof(HarmonyPatches.CraftingPage_ClickCraftingRecipe_Prefix)),
 			];
 
-			Log.T(patches.Aggregate("Applying Harmony patches:", (str, p) => $"{str}{Environment.NewLine}{p.patch}"));
-
 			foreach (PatchTemplate patch in patches)
 			{
 				harmony.Patch(
@@ -181,7 +179,6 @@ namespace RaisedGardenBeds
 				}
 				matchesPerDict[i++] = matches.Count;
 			}
-			Log.T($"Found {string.Join("/", matchesPerDict)} garden beds in crafting menu pages ({unlockedCount} unlocked).");
 		}
 
 		/// <summary>

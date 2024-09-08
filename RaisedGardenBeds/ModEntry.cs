@@ -124,8 +124,6 @@ namespace RaisedGardenBeds
 
 		private void GameLoop_DayStarted(object sender, DayStartedEventArgs e)
 		{
-			Log.T($"Start of day: Y{Game1.year}/M{1 + Utility.getSeasonNumber(Game1.currentSeason)}/D{Game1.dayOfMonth}");
-
 			// Perform OnSaveLoaded behaviours when starting a new game
 			bool isNewGame = WorldDate.Now().TotalDays <= 1;
 			if (isNewGame)
@@ -156,7 +154,6 @@ namespace RaisedGardenBeds
 			// Break ready objects at the start of each season
 			if (ModEntry.Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == WorldDate.DaysPerMonth)
 			{
-				Log.T($"Performing end-of-season breakage: Y{Game1.year}/M{1 + Utility.getSeasonNumber(Game1.currentSeason)}/D{Game1.dayOfMonth}");
 				OutdoorPot.BreakAll();
 			}
 		}
@@ -170,8 +167,6 @@ namespace RaisedGardenBeds
 		{
 			if (e.NewStage is StardewModdingAPI.Enums.LoadStage.Loaded)
 			{
-				Log.T("Invalidating assets on connected for multiplayer peer.");
-
 				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "BigCraftables"));
 				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
 			}
@@ -183,8 +178,6 @@ namespace RaisedGardenBeds
 			List<string> newVarieties = ModEntry.AddNewAvailableRecipes();
 			if (newVarieties.Count > 0)
 			{
-				Log.T(newVarieties.Aggregate($"Unlocked {newVarieties.Count} new recipes:", (str, s) => $"{str}{Environment.NewLine}{s}"));
-
 				NewRecipeMenu.Push(newVarieties);
 			}
 		}
@@ -201,7 +194,6 @@ namespace RaisedGardenBeds
 
 		private bool LoadAPIs()
 		{
-			Log.T("Loading mod-provided APIs.");
 			ISpaceCoreAPI spacecoreAPI = this.Helper.ModRegistry.GetApi<ISpaceCoreAPI>("spacechase0.SpaceCore");
 			if (spacecoreAPI is null)
 			{
@@ -217,8 +209,6 @@ namespace RaisedGardenBeds
 
 		private void Initialise()
 		{
-			Log.T("Initialising mod data.");
-
 			// Content
 			Translations.Initialise();
 			this.LoadContentPacks();
@@ -287,7 +277,6 @@ namespace RaisedGardenBeds
 
 		private void SaveLoadedBehaviours()
 		{
-			Log.T($"Adding endOfNightStatus definition: {ModEntry.EndOfNightState}");
 			Game1.player.team.endOfNightStatus.AddSpriteDefinition(
 				key: ModEntry.EndOfNightState,
 				file: AssetManager.GameContentEndOfNightSpritesPath,
@@ -454,8 +443,6 @@ namespace RaisedGardenBeds
 			}
 			if (recipesToAdd.Count > 0)
 			{
-				Log.T($"Adding {recipesToAdd.Count} default recipes:{recipesToAdd.Aggregate(string.Empty, (str, s) => $"{str}{Environment.NewLine}{s}")}");
-
 				for (int i = 0; i < recipesToAdd.Count; ++i)
 				{
 					Game1.player.craftingRecipes.Add(recipesToAdd[i], 0);

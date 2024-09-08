@@ -129,8 +129,6 @@ namespace RaisedGardenBeds
 						events[i]["Who"]);
 				}
 
-				Log.T($"Loaded {events.Count} event(s).{Environment.NewLine}Root event: {events[0]["Where"]}/{events[0]["Conditions"]}");
-
 				ModEntry.EventData = events;
 
 				return;
