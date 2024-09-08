@@ -63,6 +63,16 @@ namespace RaisedGardenBeds
 		[JsonIgnore]
 		public string LocalName { get; set; }
 		/// <summary>
+		/// Name of this object variety within mod item definitions dictionary.
+		/// </summary>
+		[JsonIgnore]
+		public string VariantName { get; set; }
+		/// <summary>
+		/// Name of this object variety within the scope of the full game.
+		/// </summary>
+		[JsonIgnore]
+		public string ItemName { get; set; }
+		/// <summary>
 		/// Key for the spritesheet this object should draw from
 		/// </summary>
 		[JsonIgnore]

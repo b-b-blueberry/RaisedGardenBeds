@@ -49,11 +49,7 @@ namespace RaisedGardenBeds
 				new(
 					type: HarmonyPatchType.Postfix,
 					original: AccessTools.Method(typeof(StardewValley.Menus.CraftingPage), "layoutRecipes"),
-					patch: nameof(HarmonyPatches.CraftingPage_LayoutRecipes_Postfix)),
-				new(
-					type: HarmonyPatchType.Prefix,
-					original: AccessTools.Method(typeof(StardewValley.Menus.CraftingPage), "clickCraftingRecipe"),
-					patch: nameof(HarmonyPatches.CraftingPage_ClickCraftingRecipe_Prefix)),
+					patch: nameof(HarmonyPatches.CraftingPage_LayoutRecipes_Postfix))
 			];
 
 			foreach (PatchTemplate patch in patches)
@@ -167,78 +163,18 @@ namespace RaisedGardenBeds
 					.ToList();
 				foreach (var pair in matches)
 				{
-					string variantKey = OutdoorPot.GetVariantKeyFromName(name: pair.Value.name);
+					string variantKey = OutdoorPot.GetVariantKeyFromItemName(name: pair.Value.name);
 
 					// Sprite
 					pair.Key.texture = ModEntry.Sprites[ModEntry.ItemDefinitions[variantKey].SpriteKey];
 					pair.Key.sourceRect = OutdoorPot.GetSpriteSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex);
 
 					// Strings
-					pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromName(pair.Value.name);
+					pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromItemName(pair.Value.name);
 					pair.Value.description = OutdoorPot.GetRawDescription();
 				}
 				matchesPerDict[i++] = matches.Count;
 			}
-		}
-
-		/// <summary>
-		/// Replace logic for crafting objects in base game crafting menu to create the appropriate garden bed for the crafting recipe variant.
-		/// </summary>
-		public static bool CraftingPage_ClickCraftingRecipe_Prefix(
-			CraftingPage __instance,
-			int ___currentCraftingPage,
-			ref Item ___heldItem,
-			ClickableTextureComponent c,
-			bool playSound = true)
-		{
-			try
-			{
-				// Fetch an instance of any clicked-on craftable in the crafting menu
-				CraftingRecipe recipe = __instance.pagesOfCraftingRecipes[___currentCraftingPage][c];
-
-				// Fall through to default method for any other craftables
-				if (!recipe.name.StartsWith(OutdoorPot.GenericName))
-					return true;
-
-				OutdoorPot item = new(
-					variantKey: OutdoorPot.GetVariantKeyFromName(recipe.name),
-					tileLocation: Vector2.Zero);
-
-				// Behaviours as from base method
-				recipe.consumeIngredients(additionalMaterials: __instance._materialContainers);
-				if (playSound)
-				{
-					Game1.playSound("coin");
-				}
-				if (___heldItem is null)
-				{
-					___heldItem = item;
-				}
-				else if (___heldItem.canStackWith(item))
-				{
-					___heldItem.addToStack(item);
-				}
-
-				if (Game1.player.craftingRecipes.ContainsKey(recipe.name))
-				{
-					Game1.player.craftingRecipes[recipe.name] += recipe.numberProducedPerCraft;
-				}
-
-				Game1.stats.checkForCraftingAchievements();
-
-				if (Game1.options.gamepadControls && Game1.player.couldInventoryAcceptThisItem(___heldItem))
-				{
-					Game1.player.addItemToInventoryBool(___heldItem);
-					___heldItem = null;
-				}
-
-				return false;
-			}
-			catch (Exception e)
-			{
-				HarmonyPatches.ErrorHandler(e);
-			}
-			return true;
 		}
 	}
 }

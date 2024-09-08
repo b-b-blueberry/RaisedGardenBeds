@@ -6,7 +6,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Netcode;
 using StardewValley;
-using StardewValley.GameData.BigCraftables;
 using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 
@@ -35,6 +34,10 @@ namespace RaisedGardenBeds
 		{
 			get => this.displayName;
 		}
+		/// <summary>
+		/// Overrides <see cref="StardewValley.Objects.IndoorPot.TypeDefinitionId"/> to use custom qualifier.
+		/// </summary>
+		public override string TypeDefinitionId => OutdoorPotDataDefinition.TypeDefinitionId;
 		/// <summary>
 		/// Name of key for the current object variant in the <see cref="ModEntry.ItemDefinitions"/> dictionary.
 		/// </summary>
@@ -141,38 +144,30 @@ namespace RaisedGardenBeds
 		internal const string GenericName = "blueberry.rgb.raisedbed";
 
 
-		public OutdoorPot() : this(variantKey: null, tileLocation: Vector2.Zero) { }
+		public OutdoorPot() : this(itemId: null, tile: Vector2.Zero) {}
 
-		public OutdoorPot(string variantKey, Vector2 tileLocation)
+		public OutdoorPot(string itemId, Vector2 tile)
 		{
-			// Code copied from base constructors rather than calling them
-			// since fields would inevitably fail to populate in order.
-
-			// Object ()
 			this.initNetFields();
 
-			// Object (Vector2, int, bool) : Object ()
-			this.ItemId = OutdoorPot.GetNameFromVariantKey(variantKey);
-			this.TileLocation = tileLocation;
-			this.CanBeSetDown = true;
+			// Item
+			itemId = this.ValidateUnqualifiedItemId(itemId);
+			this.ItemId = itemId ?? OutdoorPot.GenericName;
+
+			// Object
+			this.Name = itemId;
+			this.TileLocation = tile;
+			this.IsRecipe = false;
 			this.bigCraftable.Value = true;
+			this.CanBeSetDown = true;
+			this.setOutdoors.Value = true;
+			this.setIndoors.Value = true;
+			this.Type = "Crafting";
+			this.Category = OutdoorPot.BigCraftableCategory;
+			this.Fragility = OutdoorPot.fragility_Removable;
+			this.Edibility = OutdoorPot.inedible;
 
-			Game1.bigCraftableData.TryGetValue(this.ItemId, out BigCraftableData data);
-			if (data is not null)
-			{
-				this.Name = data.Name;
-				this.Price = data.Price;
-				this.Edibility = StardewValley.Object.inedible;
-				this.Type = "Crafting";
-				this.Category = StardewValley.Object.CraftingCategory;
-				this.setOutdoors.Value = data.CanBePlacedOutdoors;
-				this.setIndoors.Value = data.CanBePlacedIndoors;
-				this.Fragility = data.Fragility;
-				this.isLamp.Value = data.IsLamp;
-				this.IsRecipe = false;
-			}
-
-			// IndoorPot (Vector2) : Object (Vector2, int, bool)
+			// IndoorPot
 			this.hoeDirt.Value = new HoeDirt();
 			if (Game1.currentLocation is not null && Game1.currentLocation.IsOutdoors && Game1.IsRainingHere(Game1.currentLocation))
 			{
@@ -181,15 +176,8 @@ namespace RaisedGardenBeds
 			}
 			this.showNextIndex.Value = this.hoeDirt.Value.state.Value == 1;
 
-			// this (string, Vector2) : IndoorPot (Vector2)
-			this.InitOutdoorPot(variantKey, tileLocation);
-		}
-
-		public void InitOutdoorPot(string variantKey, Vector2 tileLocation)
-		{
-			this.VariantKey.Value = variantKey;
-			this.boundingBox.Value = new Rectangle((int)tileLocation.X * Game1.tileSize, (int)tileLocation.Y * Game1.tileSize, Game1.tileSize, Game1.tileSize);
-			this.displayName = OutdoorPot.GetDisplayNameFromVariantKey(variantKey);
+			// OutdoorPot
+			this.VariantKey.Set(OutdoorPot.GetVariantKeyFromItemName(name: itemId));
 		}
 
 		protected override void initNetFields()
@@ -219,6 +207,7 @@ namespace RaisedGardenBeds
 				?? oldValue
 				?? ModEntry.ItemDefinitions.Keys.FirstOrDefault(key => key.StartsWith(ModEntry.Instance.ModManifest.Author))
 				?? ModEntry.ItemDefinitions.Keys.First();
+			this.displayName = OutdoorPot.GetDisplayNameFromVariantKey(this.VariantKey.Value);
 			if (resetBreakage)
 			{
 				this.BreakageTimer.Value = this.BreakageStart;
@@ -238,36 +227,24 @@ namespace RaisedGardenBeds
 			return new Rectangle(Game1.smallestTileSize * (isBroken ? OutdoorPot.BrokenIndexInSheet : OutdoorPot.PreviewIndexInSheet), spriteIndex * Game1.smallestTileSize * 2, Game1.smallestTileSize, Game1.smallestTileSize * 2);
 		}
 
-		public static string GetVariantKeyFromName(string name)
+		public static string GetVariantKeyFromItemName(string name)
 		{
-			int genericNameSplits = OutdoorPot.GenericName.Split('.').Length;
-			string[] splitName = name.Split(['.'], genericNameSplits + 1);
-			return splitName.Length > genericNameSplits ? splitName.Last() : null;
+			return ModEntry.ItemDefinitions.Values.FirstOrDefault(entry => entry.ItemName == name)?.VariantName ?? null;
 		}
 
-		public static string GetDisplayNameFromName(string name)
+		public static string GetItemNameFromVariantKey(string variantKey)
 		{
-			return OutdoorPot.GetDisplayNameFromVariantKey(OutdoorPot.GetVariantKeyFromName(name));
+			return ModEntry.ItemDefinitions.TryGetValue(variantKey, out ItemDefinition entry) ? entry.ItemName : null;
 		}
 
-		public static int GetVariantIndexFromVariantKey(string variantKey)
+		public static string GetDisplayNameFromItemName(string name)
 		{
-			return ModEntry.ItemDefinitions.Keys.ToList().IndexOf(variantKey);
+			return OutdoorPot.GetDisplayNameFromVariantKey(OutdoorPot.GetVariantKeyFromItemName(name));
 		}
 
 		public static string GetDisplayNameFromVariantKey(string variantKey)
 		{
-			return Translations.GetNameTranslation(data: ModEntry.ItemDefinitions[variantKey]);
-		}
-
-		public static string GetNameFromVariantKey(string variantKey)
-		{
-			return $"{OutdoorPot.GenericName}.{variantKey}";
-		}
-
-		public static string GetDisplayNameFromRecipeName(string recipeName)
-		{
-			return OutdoorPot.GetDisplayNameFromName(recipeName.Split('.').Last());
+			return ModEntry.ItemDefinitions.TryGetValue(variantKey, out ItemDefinition entry) ? Translations.GetNameTranslation(data: entry) : null;
 		}
 
 		/// <summary>
@@ -301,6 +278,20 @@ namespace RaisedGardenBeds
 		{
 			string description = OutdoorPot.GetRawDescription();
 			return Game1.parseText(text: description, whichFont: Game1.smallFont, width: this.getDescriptionWidth());
+		}
+
+		public override void RecalculateBoundingBox()
+		{
+			this.boundingBox.Set(new(
+				x: (int)this.TileLocation.X * Game1.tileSize,
+				y: (int)this.TileLocation.Y * Game1.tileSize,
+				width: Game1.tileSize,
+				height: Game1.tileSize));
+		}
+
+		public override bool isPlaceable()
+		{
+			return OutdoorPot.IsLocationValid(Game1.currentLocation);
 		}
 
 		public override bool placementAction(GameLocation location, int x, int y, Farmer who = null)
@@ -381,7 +372,7 @@ namespace RaisedGardenBeds
 
 					// refund debris
 					string recipeRaw = StardewValley.CraftingRecipe.craftingRecipes
-						[OutdoorPot.GetNameFromVariantKey(variantKey: this.VariantKey.Value)];
+						[OutdoorPot.GetItemNameFromVariantKey(variantKey: this.VariantKey.Value)];
 					string[] recipeSplit = recipeRaw.Split('/')[0].Split(' ');
 					List<int> recipe = recipeSplit.ToList().ConvertAll(int.Parse);
 					int refundItem = recipe[0];
@@ -638,6 +629,9 @@ namespace RaisedGardenBeds
 
 		public override void drawWhenHeld(SpriteBatch spriteBatch, Vector2 objectPosition, Farmer f)
 		{
+			if (this.VariantKey.Value is null)
+				return;
+
 			spriteBatch.Draw(
 				texture: ModEntry.Sprites[this.SpriteKey],
 				position: objectPosition,
@@ -652,6 +646,9 @@ namespace RaisedGardenBeds
 
 		public override void drawInMenu(SpriteBatch spriteBatch, Vector2 location, float scaleSize, float transparency, float layerDepth, StackDrawType drawStackNumber, Color color, bool drawShadow)
 		{
+			if (this.VariantKey.Value is null)
+				return;
+
 			if (this.IsRecipe)
 			{
 				transparency = 0.5f;
@@ -687,6 +684,9 @@ namespace RaisedGardenBeds
 
 		public override void draw(SpriteBatch spriteBatch, int x, int y, float alpha = 1)
 		{
+			if (this.VariantKey.Value is null)
+				return;
+
 			Vector2 position = Game1.GlobalToLocal(Game1.viewport, new Vector2(x * Game1.tileSize, (y * Game1.tileSize) - Game1.tileSize));
 			Rectangle destination = new(
 				x: (int)position.X + ((this.shakeTimer > 0) ? Game1.random.Next(-1, 2) : 0),
@@ -852,7 +852,7 @@ namespace RaisedGardenBeds
 
 			if (source is OutdoorPot other)
 			{
-				other.InitOutdoorPot(variantKey: other.VariantKey.Value, tileLocation: other.TileLocation);
+				this.VariantKey.Set(other.VariantKey.Value);
 			}
 		}
 

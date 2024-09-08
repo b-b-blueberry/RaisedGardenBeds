@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
-using StardewValley.GameData.BigCraftables;
 
 namespace RaisedGardenBeds
 {
@@ -90,7 +89,6 @@ namespace RaisedGardenBeds
 		public bool CanEdit<T>(IAssetInfo asset)
 		{
 			return asset.Name.IsEquivalentTo(GameContentEventDataPath)
-				|| asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftables"))
 				|| asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes"))
 				// Also patch the event dictionary for any locations with an entry in our event definitions
 				|| (asset.Name.StartsWith(Path.Combine("Data", "Events"))
@@ -137,55 +135,33 @@ namespace RaisedGardenBeds
 			/********
 			Game data
 			********/
-
-			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "BigCraftables")))
-			{
-				if (ModEntry.ItemDefinitions is null)
-					return;
-
-				var data = asset.AsDictionary<string, BigCraftableData>().Data;
-
-				// Add all object variants to big craftables dictionary
-				foreach (var entry in ModEntry.ItemDefinitions)
-				{
-					string name = OutdoorPot.GetNameFromVariantKey(entry.Key);
-					data.Add(name, new()
-					{
-						Name = name,
-						DisplayName = Translations.GetTranslation("item.name"),
-						Description = Translations.GetTranslation("item.description.default")
-					});
-				}
-
-				ModEntry.IsDataAdded = true;
-
-				return;
-			}
 			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes")))
 			{
 				if (ModEntry.ItemDefinitions is null || !ModEntry.IsDataAdded)
 					return;
 
-				// Add crafting recipes for all object variants
 				var data = asset.AsDictionary<string, string>().Data;
-				foreach (KeyValuePair<string, ItemDefinition> entry in ModEntry.ItemDefinitions)
+
+				// Add crafting recipes for all object variants
+				foreach (ItemDefinition entry in ModEntry.ItemDefinitions.Values)
 				{
-					string name = OutdoorPot.GetNameFromVariantKey(entry.Key);
+					string ingredients = ItemDefinition.ParseRecipeIngredients(data: entry);
+					string displayName = Translations.GetNameTranslation(data: entry);
 					string[] fields =
 					[	// Crafting ingredients:
-						ItemDefinition.ParseRecipeIngredients(data: entry.Value),
+						ingredients,
 						// Unused field:
 						"blue berry",
 						// Crafted item ID and quantity:
-						$"{name} {entry.Value.RecipeCraftedCount}",
+						$"{entry.ItemName} {entry.RecipeCraftedCount}",
 						// Recipe is bigCraftable:
 						"true",
 						// Recipe conditions (we ignore these):
 						"blue berry",
 						// Recipe display name:
-						Translations.GetNameTranslation(data: entry.Value)
+						displayName
 					];
-					data[name] = string.Join("/", fields);
+					data[entry.ItemName] = string.Join("/", fields);
 				}
 
 				return;

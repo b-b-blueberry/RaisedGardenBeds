@@ -131,20 +131,6 @@ namespace RaisedGardenBeds
 				this.SaveLoadedBehaviours();
 			}
 
-			// Log root event status
-			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
-			{
-				bool checkRawConditions(string s) => Game1.getFarm().checkEventPrecondition($"{ModEntry.EventRootId}/{s}") != "-1"; ;
-				string conditions = ModEntry.EventData[0]["Conditions"];
-				string checkedConditions = string.Join("/",
-					conditions
-						.Split('/')
-						.ToList()
-						.Select(s => checkRawConditions(s)));
-				Log.T($"Player has not seen root event."
-					+ $"{Environment.NewLine}Preconditions: ({conditions} == {checkedConditions} == {checkRawConditions(conditions)})");
-			}
-
 			// Add always-available recipes to player list without any unique fanfare
 			ModEntry.AddDefaultRecipes();
 		}
@@ -167,7 +153,6 @@ namespace RaisedGardenBeds
 		{
 			if (e.NewStage is StardewModdingAPI.Enums.LoadStage.Loaded)
 			{
-				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "BigCraftables"));
 				this.Helper.GameContent.InvalidateCache(Path.Combine("Data", "CraftingRecipes"));
 			}
 		}
@@ -175,10 +160,10 @@ namespace RaisedGardenBeds
 		private void SpaceEvents_ShowNightEndMenus(object sender, SpaceCore.Events.EventArgsShowNightEndMenus e)
 		{
 			// Add and show any newly-available object recipes to player list at the end of day screens
-			List<string> newVarieties = ModEntry.AddNewAvailableRecipes();
-			if (newVarieties.Count > 0)
+			ModEntry.AddNewAvailableRecipes(out List<string> variantKeys);
+			if (variantKeys.Any())
 			{
-				NewRecipeMenu.Push(newVarieties);
+				NewRecipeMenu.Push(variantKeys);
 			}
 		}
 
@@ -203,6 +188,7 @@ namespace RaisedGardenBeds
 			}
 
 			spacecoreAPI.RegisterSerializerType(typeof(OutdoorPot));
+			ItemRegistry.AddTypeDefinition(new OutdoorPotDataDefinition());
 
 			return true;
 		}
@@ -224,24 +210,6 @@ namespace RaisedGardenBeds
 			this.Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
 			this.Helper.Events.GameLoop.ReturnedToTitle += this.GameLoop_ReturnedToTitle;
 			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
-
-			// Console commands
-			this.Helper.ConsoleCommands.Add(
-				name: ModEntry.CommandPrefix + "eventget",
-				documentation: $"Check if event has been seen.{Environment.NewLine}Optional event ID, defaults to root event.",
-				callback: ModEntry.Cmd_IsEventSeen);
-			this.Helper.ConsoleCommands.Add(
-				name: ModEntry.CommandPrefix + "eventset",
-				documentation: $"Set state for having seen any event.{Environment.NewLine}Optional event ID, defaults to root event.",
-				callback: ModEntry.Cmd_ToggleEventSeen);
-			this.Helper.ConsoleCommands.Add(
-				name: ModEntry.CommandPrefix + "give",
-				documentation: $"Give several of all currently unlocked varieties of raised beds.",
-				callback: ModEntry.Cmd_Give);
-			this.Helper.ConsoleCommands.Add(
-				name: ModEntry.CommandPrefix + "giveall",
-				documentation: "Give several of all varieties of raised beds.",
-				callback: ModEntry.Cmd_GiveAll);
 		}
 
 		private void AddGenericModConfigMenu()
@@ -359,10 +327,13 @@ namespace RaisedGardenBeds
 				{
 					string localName = pair.Key;
 					string variantKey = $"{packKey}.{localName}";
+					string itemName = $"{OutdoorPot.GenericName}.{variantKey}";
 
 					// Parse temp values for each entry
 					pair.Value.ContentPack = contentPack;
 					pair.Value.LocalName = localName;
+					pair.Value.VariantName = variantKey;
+					pair.Value.ItemName = itemName;
 					pair.Value.SpriteKey = packKey;
 					pair.Value.SpriteIndex = spriteIndex++;
 
@@ -422,137 +393,55 @@ namespace RaisedGardenBeds
 
 		public static void AddDefaultRecipes()
 		{
-			List<string> recipesToAdd = [];
-			string[] eventsSeen = Game1.player.eventsSeen.ToArray();
+			List<string> recipes = [];
 			string precondition = $"{ModEntry.EventRootId}/{ModEntry.EventData[0]["Conditions"]}";
-			string rootEventReady = Game1.getFarm().checkEventPrecondition(precondition);
-			bool hasOrWillSeeRootEvent = eventsSeen.Contains(ModEntry.EventRootId.ToString()) || rootEventReady != "-1";
-			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
-			{
-				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
-				string craftingRecipeName = OutdoorPot.GetNameFromVariantKey(variantKey: variantKey);
-				bool isAlreadyKnown = Game1.player.craftingRecipes.ContainsKey(craftingRecipeName);
-				bool isDefaultRecipe = ModEntry.ItemDefinitions[variantKey].RecipeIsDefault;
-				bool isInitialEventRecipe = string.IsNullOrEmpty(ModEntry.ItemDefinitions[variantKey].RecipeConditions);
-				bool shouldAdd = ModEntry.Config.RecipesAlwaysAvailable || isDefaultRecipe || (hasOrWillSeeRootEvent && isInitialEventRecipe);
+			string rootEventReady = Game1.getFarm().checkEventPrecondition(precondition: precondition, check_seen: true);
+			bool hasOrWillSeeRootEvent = Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()) || rootEventReady != "-1";
 
-				if (!isAlreadyKnown && shouldAdd)
-				{
-					recipesToAdd.Add(craftingRecipeName);
-				}
-			}
-			if (recipesToAdd.Count > 0)
+			foreach (ItemDefinition entry in ModEntry.ItemDefinitions.Values)
 			{
-				for (int i = 0; i < recipesToAdd.Count; ++i)
-				{
-					Game1.player.craftingRecipes.Add(recipesToAdd[i], 0);
-				}
+				bool isKnown = Game1.player.craftingRecipes.ContainsKey(entry.ItemName);
+				bool isDefault = string.IsNullOrEmpty(entry.RecipeConditions);
+				bool isAvailable = ModEntry.Config.RecipesAlwaysAvailable || entry.RecipeIsDefault || (hasOrWillSeeRootEvent && isDefault);
+				if (!isKnown && isAvailable)
+					recipes.Add(entry.ItemName);
+			}
+			if (recipes.Any())
+			{
+				foreach (string recipe in recipes)
+					Game1.player.craftingRecipes.Add(recipe, 0);
 			}
 		}
 
-		public static List<string> AddNewAvailableRecipes()
+		/// <summary>
+		/// Adds new entries to player's crafting recipe dictionary.
+		/// No effect if introduction event has not been seen.
+		/// </summary>
+		/// <param name="variantKeys">List of variant keys of objects from new crafting recipes.</param>
+		public static void AddNewAvailableRecipes(out List<string> variantKeys)
 		{
-			List<string> newVariants = [];
-			for (int i = 0; i < ModEntry.ItemDefinitions.Count; ++i)
+			variantKeys = [];
+
+			// Skip if player has not seen introduction event
+			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
+				return;
+
+			foreach (ItemDefinition entry in ModEntry.ItemDefinitions.Values)
 			{
-				string variantKey = ModEntry.ItemDefinitions.Keys.ElementAt(i);
-				string itemName = OutdoorPot.GetNameFromVariantKey(variantKey);
-
-				if (Game1.player.craftingRecipes.ContainsKey(itemName)
-					|| string.IsNullOrEmpty(ModEntry.ItemDefinitions[variantKey].RecipeConditions)
-					|| !Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
-				{
+				// Ignore known recipes and recipes with no defined preconditions (these are added by default elsewhere)
+				if (Game1.player.craftingRecipes.ContainsKey(entry.ItemName) || string.IsNullOrEmpty(entry.RecipeConditions))
 					continue;
-				}
 
-				int eventID = ModEntry.EventRootId + i;
-				string eventKey = $"{eventID}/{ModEntry.ItemDefinitions[variantKey].RecipeConditions}";
-				string precondition = Game1.getFarm().checkEventPrecondition(eventKey);
+				// Add recipes with fulfilled preconditions
+				string eventKey = $"{ModEntry.EventRootId}/{entry.RecipeConditions}";
+				string precondition = Game1.getFarm().checkEventPrecondition(precondition: eventKey, check_seen: false);
 				if (precondition != "-1")
 				{
-					newVariants.Add(variantKey);
-					Game1.player.craftingRecipes.Add(itemName, 0);
+					variantKeys.Add(entry.VariantName);
+					Game1.player.craftingRecipes.Add(entry.ItemName, 0);
 				}
 			}
-			return newVariants;
-		}
-
-		private static void Give(string variantKey, int quantity)
-		{
-			OutdoorPot item = new(variantKey: variantKey, tileLocation: Vector2.Zero)
-			{
-				Stack = quantity
-			};
-			if (!Game1.player.addItemToInventoryBool(item))
-			{
-				Log.D($"Inventory full: Did not add {variantKey} raised bed.");
-			}
-		}
-
-		public static void Cmd_Give(string s, string[] args)
-		{
-			const int defaultQuantity = 25;
-			int quantity = args.Length == 0
-				? defaultQuantity
-				: int.TryParse(args[0], out int argQuantity)
-					? argQuantity
-					: defaultQuantity;
-
-			Log.D($"Adding {quantity} of each unlocked raised bed. Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
-
-			IEnumerable<string> unlockedKeys = Game1.player.craftingRecipes.Keys
-				.Where(OutdoorPot.IsOutdoorPotByName)
-				.Select(OutdoorPot.GetVariantKeyFromName);
-			if (!unlockedKeys.Any())
-			{
-				Log.D($"No raised bed recipes are unlocked! Use '{ModEntry.CommandPrefix}giveall' to add all varieties.");
-			}
-			else foreach (string variantKey in unlockedKeys)
-			{
-				ModEntry.Give(variantKey: variantKey, quantity: quantity);
-			}
-		}
-
-		public static void Cmd_GiveAll(string s, string[] args)
-		{
-			const int defaultQuantity = 25;
-			int quantity = args.Length == 0
-				? defaultQuantity
-				: int.TryParse(args[0], out int argQuantity)
-					? argQuantity
-					: defaultQuantity;
-
-			Log.D($"Adding {quantity} of all raised beds. Use '{ModEntry.CommandPrefix}give' to add unlocked varieties only.");
-
-			foreach (string variantKey in ModEntry.ItemDefinitions.Keys)
-			{
-				ModEntry.Give(variantKey: variantKey, quantity: quantity);
-			}
-		}
-
-		public static void Cmd_IsEventSeen(string s, string[] args)
-		{
-			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
-				? argId
-				: ModEntry.EventRootId;
-
-			Log.D($"Player {(Game1.player.eventsSeen.Contains(eventId.ToString()) ? "has" : "has not")} seen event {eventId}.");
-		}
-
-		public static void Cmd_ToggleEventSeen(string s, string[] args)
-		{
-			int eventId = args.Length > 0 && int.TryParse(args[0], out int argId)
-				? argId
-				: ModEntry.EventRootId;
-			if (Game1.player.eventsSeen.Contains(eventId.ToString()))
-			{
-				Game1.player.eventsSeen.Remove(eventId.ToString());
-			}
-			else
-			{
-				Game1.player.eventsSeen.Add(eventId.ToString());
-			}
-			ModEntry.Cmd_IsEventSeen(s: s, args: args);
+			return;
 		}
 	}
 }
