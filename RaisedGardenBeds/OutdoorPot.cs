@@ -213,6 +213,7 @@ namespace RaisedGardenBeds
 				Log.W($"Did not set {this.GetType().Name} ({this.Name}) variant: {nameof(ModEntry.ItemDefinitions)} null or empty.");
 				return;
 			}
+
 			bool resetBreakage = newValue is null;
 			this.VariantKey.Value = newValue
 				?? oldValue
@@ -305,11 +306,13 @@ namespace RaisedGardenBeds
 		public override bool placementAction(GameLocation location, int x, int y, Farmer who = null)
 		{
 			// Round tile location to nearest multiple of absolute tile size, then divide by size to get coordinates
-			Vector2 tileLocation = new Vector2(x - (x % Game1.tileSize), y - (y % Game1.tileSize)) / Game1.tileSize;
+			Vector2 tile = new Vector2(
+				x: x - (x % Game1.tileSize),
+				y: y - (y % Game1.tileSize)) / Game1.tileSize;
 			// Add object to location
-			location.Objects[tileLocation] = new OutdoorPot(variantKey: this.VariantKey.Value, tileLocation: tileLocation);
+			location.Objects[tile] = this.getOne() as OutdoorPot;
 			// Check to form arrangements with neighbouring objects
-			OutdoorPot.ArrangeWithNeighbours(location: location, tileLocation: tileLocation);
+			OutdoorPot.ArrangeWithNeighbours(location: location, tile: tile);
 			// Remove from active stack if placed by player
 			if (Game1.player.ActiveObject == this)
 			{
@@ -410,7 +413,7 @@ namespace RaisedGardenBeds
 						&& Game1.createItemDebris(this, Game1.player.getStandingPosition(), Game1.player.FacingDirection) is Debris debris
 						&& this.Location.Objects.Remove(this.TileLocation))
 					{
-						OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
+						OutdoorPot.ArrangeWithNeighbours(location: this.Location, tile: this.TileLocation);
 					}
 				}
 			}
@@ -595,7 +598,9 @@ namespace RaisedGardenBeds
 			if (!this.IsBroken && this.heldObject.Value is not null)
 			{
 				bool isSprinkler = this.heldObject.Value.IsSprinkler();
-				int sprinklerRadius = isSprinkler ? this.heldObject.Value.GetModifiedRadiusForSprinkler() : -1;
+				int sprinklerRadius = isSprinkler
+					? this.heldObject.Value.GetModifiedRadiusForSprinkler()
+					: -1;
 				if (ModEntry.Config.SprinklersEnabled
 					&& isSprinkler && sprinklerRadius >= 0
 					&& (!Game1.IsRainingHere(this.Location) || !this.Location.IsOutdoors))
@@ -806,7 +811,7 @@ namespace RaisedGardenBeds
 			if (this.hoeDirt.Value.crop is Crop crop)
 			{
 				crop.drawWithOffset(
-					spriteBatch,
+					b: spriteBatch,
 					tileLocation: this.TileLocation,
 					toTint: (this.hoeDirt.Value.state.Value == 1 && crop.currentPhase.Value == 0 && !crop.raisedSeeds.Value)
 						? (new Color(180, 100, 200) * 1f)
@@ -820,7 +825,7 @@ namespace RaisedGardenBeds
 			{
 				int objectOffset = (4 * Game1.pixelZoom);
 				o.draw(
-					spriteBatch,
+					spriteBatch: spriteBatch,
 					xNonTile: x * Game1.tileSize,
 					yNonTile: (y * Game1.tileSize) - objectOffset - (this.SoilHeightAboveGround * Game1.pixelZoom),
 					layerDepth: ((this.TileLocation.Y + 0.66f) * Game1.tileSize / 10000f) + (1 / 10000f),
@@ -831,7 +836,7 @@ namespace RaisedGardenBeds
 			if (this.bush.Value is Bush bush)
 			{
 				bush.draw(
-					spriteBatch,
+					spriteBatch: spriteBatch,
 					yDrawOffset: -(this.SoilHeightAboveGround * Game1.pixelZoom));
 			}
 		}
@@ -951,7 +956,7 @@ namespace RaisedGardenBeds
 			this.BreakageTimer.Value = this.BreakageStart;
 			if (adjust)
 			{
-				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
+				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tile: this.TileLocation);
 			}
 		}
 
@@ -962,8 +967,12 @@ namespace RaisedGardenBeds
 		{
 			foreach (GameLocation location in specificLocation is not null ? [specificLocation] : Game1.locations)
 			{
-				List<OutdoorPot> pots = location.Objects.Values.OfType<OutdoorPot>().Where(o => o.IsReadyToBreak).ToList();
-				pots.ForEach(pot => pot.Break(arrange: false));
+				List<OutdoorPot> pots = location.Objects.Values
+					.OfType<OutdoorPot>()
+					.Where(o => o.IsReadyToBreak)
+					.ToList();
+				foreach (OutdoorPot pot in pots)
+					pot.Break(arrange: false);
 				OutdoorPot.ArrangeAll(specificLocation: location);
 			}
 		}
@@ -977,7 +986,7 @@ namespace RaisedGardenBeds
 			this.BreakageTimer.Value = OutdoorPot.BreakageDefinite;
 			if (arrange)
 			{
-				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tileLocation: this.TileLocation);
+				OutdoorPot.ArrangeWithNeighbours(location: this.Location, tile: this.TileLocation);
 			}
 		}
 
@@ -1043,13 +1052,13 @@ namespace RaisedGardenBeds
 		/// Identifies any garden bed objects on the given tile and tries to reform arrangements with neighbouring objects.
 		/// </summary>
 		/// <param name="location">Specific location to check within. Defaults to player's current location.</param>
-		/// <param name="tileLocation">Tile location to check for objects.</param>
-		public static void ArrangeWithNeighbours(GameLocation location, Vector2 tileLocation)
+		/// <param name="tile">Tile location to check for objects.</param>
+		public static void ArrangeWithNeighbours(GameLocation location, Vector2 tile)
 		{
 			location ??= Game1.currentLocation;
 
 			const int radius = 1;
-			Point origin = Utility.Vector2ToPoint(tileLocation);
+			Point origin = Utility.Vector2ToPoint(tile);
 			Point start = new(
 				x: Math.Max(0, origin.X - radius),
 				y: Math.Max(0, origin.Y - radius));
@@ -1061,8 +1070,8 @@ namespace RaisedGardenBeds
 			{
 				for (int y = start.Y; y <= end.Y; ++y)
 				{
-					Vector2 tile = new(x: x, y: y);
-					if (location.Objects.ContainsKey(tile) && location.Objects[tile] is OutdoorPot op)
+					Vector2 next = new(x: x, y: y);
+					if (location.Objects.ContainsKey(next) && location.Objects[next] is OutdoorPot op)
 					{
 						op.Arrange(location: location);
 					}

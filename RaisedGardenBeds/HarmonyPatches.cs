@@ -164,10 +164,10 @@ namespace RaisedGardenBeds
 			int i = 0;
 			foreach (Dictionary<ClickableTextureComponent, CraftingRecipe> dict in __instance.pagesOfCraftingRecipes)
 			{
-				List<KeyValuePair<ClickableTextureComponent, CraftingRecipe>> matches = dict
+				var matches = dict
 					.Where(pair => OutdoorPot.IsOutdoorPotByName(pair.Value.name))
 					.ToList();
-				matches.ForEach(pair =>
+				foreach (var pair in matches)
 				{
 					string variantKey = OutdoorPot.GetVariantKeyFromName(name: pair.Value.name);
 
@@ -178,7 +178,7 @@ namespace RaisedGardenBeds
 					// Strings
 					pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromName(pair.Value.name);
 					pair.Value.description = OutdoorPot.GetRawDescription();
-				});
+				}
 				matchesPerDict[i++] = matches.Count;
 			}
 			Log.T($"Found {string.Join("/", matchesPerDict)} garden beds in crafting menu pages ({unlockedCount} unlocked).");

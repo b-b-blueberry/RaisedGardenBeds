@@ -15,6 +15,7 @@ namespace RaisedGardenBeds
 		// common
 		internal static ModEntry Instance;
 		internal static Config Config;
+		internal static AssetManager AssetManager;
 
 		// definitions
 		/// <summary>
@@ -37,7 +38,6 @@ namespace RaisedGardenBeds
 		/// </summary>
 		internal static bool IsDataAdded;
 
-		AssetManager assetManager;
 
 		// others
 		internal static int ModUpdateKey;
@@ -50,12 +50,11 @@ namespace RaisedGardenBeds
 		{
 			ModEntry.Instance = this;
 			ModEntry.Config = helper.ReadConfig<Config>();
+			ModEntry.AssetManager = new AssetManager(helper: this.Helper);
 			ModEntry.ModUpdateKey = int.Parse(this.ModManifest.UpdateKeys.First().Split(':')[1]);
 
 			helper.Events.GameLoop.GameLaunched += this.GameLoop_GameLaunched;
-			this.Helper.Events.Content.AssetRequested += this.OnAssetRequested;
-
-			assetManager = new AssetManager(helper: this.Helper);
+			helper.Events.Content.AssetRequested += this.OnAssetRequested;
 		}
 
 		private Dictionary<string, Dictionary<string, string>> CTData()
@@ -128,7 +127,7 @@ namespace RaisedGardenBeds
 			Log.T($"Start of day: Y{Game1.year}/M{1 + Utility.getSeasonNumber(Game1.currentSeason)}/D{Game1.dayOfMonth}");
 
 			// Perform OnSaveLoaded behaviours when starting a new game
-			bool isNewGame = Game1.dayOfMonth == 1 && Game1.currentSeason == "spring" && Game1.year == 1;
+			bool isNewGame = WorldDate.Now().TotalDays <= 1;
 			if (isNewGame)
 			{
 				this.SaveLoadedBehaviours();
@@ -155,7 +154,7 @@ namespace RaisedGardenBeds
 		private void GameLoop_DayEnding(object sender, DayEndingEventArgs e)
 		{
 			// Break ready objects at the start of each season
-			if (ModEntry.Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == 28)
+			if (ModEntry.Config.RaisedBedsMayBreakWithAge && Game1.dayOfMonth == WorldDate.DaysPerMonth)
 			{
 				Log.T($"Performing end-of-season breakage: Y{Game1.year}/M{1 + Utility.getSeasonNumber(Game1.currentSeason)}/D{Game1.dayOfMonth}");
 				OutdoorPot.BreakAll();
@@ -169,7 +168,7 @@ namespace RaisedGardenBeds
 
 		private void Specialized_LoadStageChanged(object sender, LoadStageChangedEventArgs e)
 		{
-			if (e.NewStage == StardewModdingAPI.Enums.LoadStage.Loaded)
+			if (e.NewStage is StardewModdingAPI.Enums.LoadStage.Loaded)
 			{
 				Log.T("Invalidating assets on connected for multiplayer peer.");
 
@@ -328,7 +327,7 @@ namespace RaisedGardenBeds
 				// For some quality assurance, we check that there are an equal number of entries in the
 				// ItemDefinitions dictionary as there are sprites in the shared framework spritesheet.
 
-				const int minWidth = 160;
+				const int minWidth = Game1.smallestTileSize * 10;
 				const int minHeight = Game1.smallestTileSize * 2;
 				if (sprites.Width < minWidth)
 				{
@@ -366,24 +365,25 @@ namespace RaisedGardenBeds
 					}
 				}
 
-				int parentSheetIndex = 0;
-				foreach (KeyValuePair<string, ItemDefinition> entry in data)
+				int spriteIndex = 0;
+				foreach (var pair in data)
 				{
-					string variantKey = $"{packKey}.{entry.Key}";
+					string localName = pair.Key;
+					string variantKey = $"{packKey}.{localName}";
 
 					// Parse temp values for each entry
-					entry.Value.ContentPack = contentPack;
-					entry.Value.LocalName = entry.Key;
-					entry.Value.SpriteKey = packKey;
-					entry.Value.SpriteIndex = parentSheetIndex++;
+					pair.Value.ContentPack = contentPack;
+					pair.Value.LocalName = localName;
+					pair.Value.SpriteKey = packKey;
+					pair.Value.SpriteIndex = spriteIndex++;
 
 					// Set default DaysToBreak values to unbreakable
-					if (entry.Value.DaysToBreak <= 0)
+					if (pair.Value.DaysToBreak <= 0)
 					{
-						entry.Value.DaysToBreak = 99999;
+						pair.Value.DaysToBreak = 999999;
 					}
 
-					ModEntry.ItemDefinitions.Add(variantKey, entry.Value);
+					ModEntry.ItemDefinitions.Add(variantKey, pair.Value);
 				}
 
 				// To avoid having to keep many separate spritesheet images updated with any changes,

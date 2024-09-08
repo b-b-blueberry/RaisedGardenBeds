@@ -55,18 +55,16 @@ namespace RaisedGardenBeds
 
 			string craftingString = Game1.content.LoadString("Strings\\UI:LearnedRecipe_crafting");
 			this._titleString = Translations.GetTranslation("menu.title.new");
-			this._itemStrings =
-				this.VariantKeys
+			this._itemStrings = this.VariantKeys
 				.ToDictionary(
-					vk => vk,
-					vk => Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe",
+					key => key,
+					key => Game1.content.LoadString("Strings\\UI:LevelUp_NewRecipe",
 						craftingString,
-						OutdoorPot.GetDisplayNameFromVariantKey(variantKey: vk)));
-			this._itemSprites =
-				this.VariantKeys
+						OutdoorPot.GetDisplayNameFromVariantKey(variantKey: key)));
+			this._itemSprites = this.VariantKeys
 				.ToDictionary(
-					vk => vk,
-					vk => OutdoorPot.GetSpriteFromVariantKey(variantKey: vk));
+					key => key,
+					key => OutdoorPot.GetSpriteFromVariantKey(variantKey: key));
 		}
 
 		protected override void cleanupBeforeExit()
@@ -119,7 +117,7 @@ namespace RaisedGardenBeds
 		public override void receiveGamePadButton(Buttons b)
 		{
 			base.receiveGamePadButton(b);
-			if ((b == Buttons.Start || b == Buttons.B) && this._isActive)
+			if ((b is Buttons.Start or Buttons.B) && this._isActive)
 			{
 				this.OkButtonClicked();
 			}
