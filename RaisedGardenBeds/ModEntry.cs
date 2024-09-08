@@ -89,27 +89,40 @@ namespace RaisedGardenBeds
 
 		private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
 		{
+			bool isModContent = true;
 			if (e.Name.IsEquivalentTo(AssetManager.GameContentEndOfNightSpritesPath))
 			{
 				e.LoadFromModFile
 					<Texture2D>
 					(AssetManager.LocalEndOfNightSpritesPath, AssetLoadPriority.Exclusive);
 			}
-			if (e.Name.IsEquivalentTo(AssetManager.GameContentEventDataPath))
+			else if (e.Name.IsEquivalentTo(AssetManager.GameContentEventDataPath))
 			{
 				e.LoadFromModFile
 					<Dictionary<string, object>>
 					(AssetManager.LocalEventDataPath, AssetLoadPriority.Exclusive);
 			}
-			if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
+			else if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
 			{
 				e.LoadFrom(this.CTData, AssetLoadPriority.Low);
 			}
-			if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
+			else if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
 			{
 				e.LoadFrom(this.ITData, AssetLoadPriority.Low);
 			}
-			e.Edit(assetManager.Edit);
+			else
+			{
+				isModContent = false;
+			}
+			
+			if (isModContent
+				|| e.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes"))
+				|| e.Name.StartsWith(Path.Combine("Data", "Events"))
+					&& Path.GetFileNameWithoutExtension(e.Name.ToString()) is string where
+					&& ModEntry.EventData?.Any(dict => dict["Where"] == where) is bool isHere && isHere)
+			{
+				e.Edit(ModEntry.AssetManager.Edit);
+			}
 		}
 
 		private void GameLoop_GameLaunched(object sender, GameLaunchedEventArgs e)
