@@ -15,8 +15,7 @@ namespace RaisedGardenBeds
 
 		public override Item CreateItem(ParsedItemData data)
 		{
-			OutdoorPot item = new OutdoorPot(itemId: data.ItemId, tile: Vector2.Zero);
-			return item;
+			return new OutdoorPot(itemId: data.ItemId, tile: Vector2.Zero);
 		}
 
 		public override bool Exists(string itemId)

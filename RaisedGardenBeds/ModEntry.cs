@@ -33,10 +33,6 @@ namespace RaisedGardenBeds
 		/// Event entries are keyed by event ID and conditions.
 		/// </summary>
 		internal static List<Dictionary<string, string>> EventData = null;
-		/// <summary>
-		/// Flag raised when item definitions are added to game big craftables dictionary.
-		/// </summary>
-		internal static bool IsDataAdded;
 
 
 		// others
@@ -158,11 +154,6 @@ namespace RaisedGardenBeds
 			}
 		}
 
-		private void GameLoop_ReturnedToTitle(object sender, ReturnedToTitleEventArgs e)
-		{
-			ModEntry.IsDataAdded = false;
-		}
-
 		private void Specialized_LoadStageChanged(object sender, LoadStageChangedEventArgs e)
 		{
 			if (e.NewStage is StardewModdingAPI.Enums.LoadStage.Loaded)
@@ -222,7 +213,6 @@ namespace RaisedGardenBeds
 			this.Helper.Events.GameLoop.SaveLoaded += this.GameLoop_SaveLoaded;
 			this.Helper.Events.GameLoop.DayStarted += this.GameLoop_DayStarted;
 			this.Helper.Events.GameLoop.DayEnding += this.GameLoop_DayEnding;
-			this.Helper.Events.GameLoop.ReturnedToTitle += this.GameLoop_ReturnedToTitle;
 			SpaceCore.Events.SpaceEvents.ShowNightEndMenus += this.SpaceEvents_ShowNightEndMenus;
 		}
 
@@ -342,12 +332,14 @@ namespace RaisedGardenBeds
 					string localName = pair.Key;
 					string variantKey = $"{packKey}.{localName}";
 					string itemName = $"{OutdoorPot.GenericName}.{variantKey}";
+					string qualifiedItemName = $"{OutdoorPotDataDefinition.TypeDefinitionId}{itemName}";
 
 					// Parse temp values for each entry
 					pair.Value.ContentPack = contentPack;
 					pair.Value.LocalName = localName;
 					pair.Value.VariantName = variantKey;
 					pair.Value.ItemName = itemName;
+					pair.Value.QualifiedItemName = qualifiedItemName;
 					pair.Value.SpriteKey = packKey;
 					pair.Value.SpriteIndex = spriteIndex++;
 

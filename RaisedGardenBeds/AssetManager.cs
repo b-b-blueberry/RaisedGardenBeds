@@ -137,7 +137,7 @@ namespace RaisedGardenBeds
 			********/
 			if (asset.Name.IsEquivalentTo(Path.Combine("Data", "CraftingRecipes")))
 			{
-				if (ModEntry.ItemDefinitions is null || !ModEntry.IsDataAdded)
+				if (ModEntry.ItemDefinitions is null)
 					return;
 
 				var data = asset.AsDictionary<string, string>().Data;

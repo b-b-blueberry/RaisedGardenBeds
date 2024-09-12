@@ -73,6 +73,11 @@ namespace RaisedGardenBeds
 		[JsonIgnore]
 		public string ItemName { get; set; }
 		/// <summary>
+		/// Name of this object variety within the scope of the full game.
+		/// </summary>
+		[JsonIgnore]
+		public string QualifiedItemName { get; set; }
+		/// <summary>
 		/// Key for the spritesheet this object should draw from
 		/// </summary>
 		[JsonIgnore]
