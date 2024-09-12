@@ -41,7 +41,8 @@ namespace RaisedGardenBeds
 
 		// others
 		internal static int ModUpdateKey;
-		internal static int EventRootId => ModEntry.ModUpdateKey * 10000;
+		internal static string EventRootId => $"{ModEntry.ModUpdateKey * 10000}";
+		internal static string EventIntroductionId => $"{EventRootId}0";
 		internal const string CommandPrefix = "rgb.";
 		internal const string EndOfNightState = "blueberry.rgb.endofnightmenu";
 
@@ -407,15 +408,17 @@ namespace RaisedGardenBeds
 		public static void AddDefaultRecipes()
 		{
 			List<string> recipes = [];
+
+			// Check for introduction event viewed for default recipes
 			string precondition = $"{ModEntry.EventRootId}/{ModEntry.EventData[0]["Conditions"]}";
-			string rootEventReady = Game1.getFarm().checkEventPrecondition(precondition: precondition, check_seen: true);
-			bool hasOrWillSeeRootEvent = Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()) || rootEventReady != "-1";
+			bool hasOrWillSeeEvent = Game1.player.eventsSeen.Contains(ModEntry.EventIntroductionId)
+				|| Game1.getFarm().checkEventPrecondition(precondition: precondition, check_seen: true) != "-1";
 
 			foreach (ItemDefinition entry in ModEntry.ItemDefinitions.Values)
 			{
 				bool isKnown = Game1.player.craftingRecipes.ContainsKey(entry.ItemName);
 				bool isDefault = string.IsNullOrEmpty(entry.RecipeConditions);
-				bool isAvailable = ModEntry.Config.RecipesAlwaysAvailable || entry.RecipeIsDefault || (hasOrWillSeeRootEvent && isDefault);
+				bool isAvailable = ModEntry.Config.RecipesAlwaysAvailable || entry.RecipeIsDefault || (hasOrWillSeeEvent && isDefault);
 				if (!isKnown && isAvailable)
 					recipes.Add(entry.ItemName);
 			}
@@ -436,7 +439,7 @@ namespace RaisedGardenBeds
 			variantKeys = [];
 
 			// Skip if player has not seen introduction event
-			if (!Game1.player.eventsSeen.Contains(ModEntry.EventRootId.ToString()))
+			if (!Game1.player.eventsSeen.Contains(ModEntry.EventIntroductionId))
 				return;
 
 			foreach (ItemDefinition entry in ModEntry.ItemDefinitions.Values)
