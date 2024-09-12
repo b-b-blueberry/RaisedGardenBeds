@@ -85,7 +85,7 @@ namespace RaisedGardenBeds
 				this.xPositionOnScreen + this.width + 4,
 				Game1.uiViewport.Width - this.OkButton.bounds.Width - 4);
 			this.OkButton.bounds.Y = Math.Min(
-				this.yPositionOnScreen + this.height - 64 - IClickableMenu.borderWidth,
+				this.yPositionOnScreen + this.height - this.OkButton.bounds.Height - IClickableMenu.borderWidth - 4 * Game1.pixelZoom,
 				Game1.uiViewport.Height - this.OkButton.bounds.Height - 4);
 		}
 
@@ -212,7 +212,7 @@ namespace RaisedGardenBeds
 					Math.Max(textSize.Y, iconSize.Y * iconScale) + padding.Y);
 				Vector2 positionPadded = new Vector2(
 					this.xPositionOnScreen + ((this.width - textSize.X - (wh * Game1.pixelZoom)) / 2),
-					this.yPositionOnScreen - textSize.Y - (wh * Game1.pixelZoom / 2) - (2 * Game1.pixelZoom));
+					this.yPositionOnScreen - textSize.Y - (wh * Game1.pixelZoom / 2) - (8 * Game1.pixelZoom));
 				Point sourceOrigin = new Point(260, 310);
 				// background
 				b.Draw(
@@ -321,19 +321,21 @@ namespace RaisedGardenBeds
 					color: Game1.textColor);
 
 
+				int x = this.xPositionOnScreen;
+				int y = this.yPositionOnScreen - 8 * Game1.pixelZoom;
+
 				// Draw actual popup
 				Game1.drawDialogueBox(
-					x: this.xPositionOnScreen,
-					y: this.yPositionOnScreen,
+					x: x,
+					y: y,
 					width: this.width,
 					height: this.height,
 					speaker: false,
 					drawOnlyBox: true);
 
 				const int paddingY = 3;
-				int x = this.xPositionOnScreen + (this.width / 2);
-				int y = this.yPositionOnScreen;
-				int yOffset = IClickableMenu.spaceToClearTopBorder;
+				int yOffset = IClickableMenu.spaceToClearTopBorder - 4 * Game1.pixelZoom;
+				x += this.width / 2;
 
 				foreach (string variantKey in this.VariantKeys)
 				{
