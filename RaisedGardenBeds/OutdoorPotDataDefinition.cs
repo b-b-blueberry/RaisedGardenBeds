@@ -35,7 +35,7 @@ namespace RaisedGardenBeds
 				itemType: this,
 				itemId: itemId,
 				spriteIndex: entry.SpriteIndex,
-				textureName: entry.SpriteKey,
+				textureName: ItemDefinition.GetTextureName(packKey: OutdoorPot.GetItemDefinitionFromItemName(itemId).ContentPackName),
 				internalName: entry.ItemName,
 				displayName: OutdoorPot.GetDisplayNameFromVariantKey(variantKey: entry.VariantName),
 				description: OutdoorPot.GetRawDescription(),

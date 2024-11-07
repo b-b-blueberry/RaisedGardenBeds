@@ -44,12 +44,6 @@ namespace RaisedGardenBeds
 					type: HarmonyPatchType.Postfix,
 					original: AccessTools.Method(typeof(StardewValley.GameLocation), nameof(StardewValley.GameLocation.IsTileOccupiedBy)),
 					patch: nameof(HarmonyPatches.GameLocation_IsTileOccupiedForPlacement_Postfix)),
-				
-				// CraftingPage
-				new(
-					type: HarmonyPatchType.Postfix,
-					original: AccessTools.Method(typeof(StardewValley.Menus.CraftingPage), "layoutRecipes"),
-					patch: nameof(HarmonyPatches.CraftingPage_LayoutRecipes_Postfix))
 			];
 
 			foreach (PatchTemplate patch in patches)
@@ -143,37 +137,6 @@ namespace RaisedGardenBeds
 				{
 					__result = false;
 				}
-			}
-		}
-
-		/// <summary>
-		/// Required to draw correct object sprites and strings in crafting menu.
-		/// Event handlers on StardewModdingAPI.Events.Display.MenuChanged were inconsistent.
-		/// </summary>
-		public static void CraftingPage_LayoutRecipes_Postfix(
-			CraftingPage __instance)
-		{
-			int unlockedCount = Game1.player.craftingRecipes.Keys.Count(OutdoorPot.IsOutdoorPotByName);
-			int[] matchesPerDict = new int[__instance.pagesOfCraftingRecipes.Count];
-			int i = 0;
-			foreach (Dictionary<ClickableTextureComponent, CraftingRecipe> dict in __instance.pagesOfCraftingRecipes)
-			{
-				var matches = dict
-					.Where(pair => OutdoorPot.IsOutdoorPotByName(pair.Value.name))
-					.ToList();
-				foreach (var pair in matches)
-				{
-					string variantKey = OutdoorPot.GetVariantKeyFromItemName(name: pair.Value.name);
-
-					// Sprite
-					pair.Key.texture = ModEntry.Sprites[ModEntry.ItemDefinitions[variantKey].SpriteKey];
-					pair.Key.sourceRect = OutdoorPot.GetSpriteSourceRectangle(spriteIndex: ModEntry.ItemDefinitions[variantKey].SpriteIndex);
-
-					// Strings
-					pair.Value.DisplayName = OutdoorPot.GetDisplayNameFromItemName(pair.Value.name);
-					pair.Value.description = OutdoorPot.GetRawDescription();
-				}
-				matchesPerDict[i++] = matches.Count;
 			}
 		}
 	}

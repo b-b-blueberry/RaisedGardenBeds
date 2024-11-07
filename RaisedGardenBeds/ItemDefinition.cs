@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewValley;
@@ -57,10 +58,10 @@ namespace RaisedGardenBeds
 		********************/
 
 		/// <summary>
-		/// Pointer to the content pack this object variety is sourced from.
+		///Name of content pack this object variety is sourced from.
 		/// </summary>
 		[JsonIgnore]
-		public IContentPack ContentPack { get; set; }
+		public string ContentPackName { get; set; }
 		/// <summary>
 		/// Name of this object variety within its own content pack.
 		/// </summary>
@@ -126,6 +127,11 @@ namespace RaisedGardenBeds
 				ingredients.Add($"{id} {quantity}");
 			}
 			return string.Join(" ", ingredients);
+		}
+
+		internal static string GetTextureName(string packKey)
+		{
+			return Path.Combine(AssetManager.GameContentItemSpritesPath, packKey);
 		}
 	}
 }

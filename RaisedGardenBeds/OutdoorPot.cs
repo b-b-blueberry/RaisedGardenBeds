@@ -227,14 +227,19 @@ namespace RaisedGardenBeds
 			return new Rectangle(Game1.smallestTileSize * (isBroken ? OutdoorPot.BrokenIndexInSheet : OutdoorPot.PreviewIndexInSheet), spriteIndex * Game1.smallestTileSize * 2, Game1.smallestTileSize, Game1.smallestTileSize * 2);
 		}
 
-		public static string GetVariantKeyFromItemName(string name)
+		public static ItemDefinition GetItemDefinitionFromItemName(string name)
 		{
-			return ModEntry.ItemDefinitions.Values.FirstOrDefault(entry => entry.ItemName == name)?.VariantName ?? null;
+			return ModEntry.ItemDefinitions.Values.FirstOrDefault(entry => entry.ItemName == name);
 		}
 
-		public static string GetItemNameFromVariantKey(string variantKey)
+		public static string GetVariantKeyFromItemName(string name)
 		{
-			return ModEntry.ItemDefinitions.TryGetValue(variantKey, out ItemDefinition entry) ? entry.ItemName : null;
+			return OutdoorPot.GetItemDefinitionFromItemName(name)?.VariantName ?? null;
+		}
+
+		public static ItemDefinition GetItemDefinitionFromVariantKey(string variantKey)
+		{
+			return ModEntry.ItemDefinitions.TryGetValue(variantKey, out ItemDefinition entry) ? entry : null;
 		}
 
 		public static string GetDisplayNameFromItemName(string name)
@@ -372,7 +377,7 @@ namespace RaisedGardenBeds
 
 					// refund debris
 					string recipeRaw = StardewValley.CraftingRecipe.craftingRecipes
-						[OutdoorPot.GetItemNameFromVariantKey(variantKey: this.VariantKey.Value)];
+						[OutdoorPot.GetItemDefinitionFromVariantKey(variantKey: this.VariantKey.Value).ItemName];
 					string[] recipeSplit = recipeRaw.Split('/')[0].Split(' ');
 					List<int> recipe = recipeSplit.ToList().ConvertAll(int.Parse);
 					int refundItem = recipe[0];

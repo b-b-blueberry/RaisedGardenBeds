@@ -183,7 +183,7 @@ namespace RaisedGardenBeds
 		{
 			// Content
 			Translations.Initialise();
-			this.LoadContentPacks();
+			this.LoadItemDefinitions();
 			this.AddGenericModConfigMenu();
 
 			// Patches
@@ -250,21 +250,19 @@ namespace RaisedGardenBeds
 			}
 		}
 
-		public void LoadContentPacks()
+		public void LoadItemDefinitions()
 		{
 			ModEntry.ItemDefinitions = [];
 			ModEntry.Sprites = [];
 
-			List<IContentPack> contentPacks = this.Helper.ContentPacks.GetOwned().ToList();
-			foreach (IContentPack contentPack in contentPacks)
+			var contentPacks = Game1.content.Load<Dictionary<string, Dictionary<string, ItemDefinition>>>(AssetManager.GameContentItemDefinitionDataPath);
+			foreach (var contentPack in contentPacks)
 			{
-				string packKey = contentPack.Manifest.UniqueID;
-				var sprites = contentPack.ModContent.Load
+				string packKey = contentPack.Key;
+				var sprites = Game1.content.Load
 					<Texture2D>
-					(ItemDefinition.SpritesFile);
-				var data = contentPack.ReadJsonFile
-					<Dictionary<string, ItemDefinition>>
-					(ItemDefinition.DefinitionsFile);
+					(ItemDefinition.GetTextureName(packKey));
+				var data = contentPack.Value;
 
 				// For some quality assurance, we check that there are an equal number of entries in the
 				// ItemDefinitions dictionary as there are sprites in the shared framework spritesheet.
@@ -316,7 +314,7 @@ namespace RaisedGardenBeds
 					string qualifiedItemName = $"{OutdoorPotDataDefinition.TypeDefinitionId}{itemName}";
 
 					// Parse temp values for each entry
-					pair.Value.ContentPack = contentPack;
+					pair.Value.ContentPackName = contentPack.Key;
 					pair.Value.LocalName = localName;
 					pair.Value.VariantName = variantKey;
 					pair.Value.ItemName = itemName;

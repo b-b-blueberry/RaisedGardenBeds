@@ -16,6 +16,8 @@ namespace RaisedGardenBeds
 		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(GameContentAssetPath, "EndOfNightSprites");
 		internal static readonly string GameContentEventDataPath = Path.Combine(GameContentAssetPath, "EventData");
 		internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(GameContentAssetPath, "CommonTranslations");
+		internal static readonly string GameContentItemDefinitionDataPath = Path.Combine(GameContentAssetPath, "ItemDefinitions");
+		internal static readonly string GameContentItemSpritesPath = Path.Combine(GameContentAssetPath, "ItemSprites");
 
 		internal static readonly string LocalAssetPath = "assets";
 
@@ -34,6 +36,8 @@ namespace RaisedGardenBeds
 		{
 			return asset.Name.IsEquivalentTo(GameContentEndOfNightSpritesPath)
 				|| asset.Name.IsEquivalentTo(GameContentEventDataPath)
+				|| asset.Name.IsEquivalentTo(GameContentCommonTranslationDataPath)
+				|| asset.Name.IsEquivalentTo(GameContentItemDefinitionDataPath);
 		}
 
 		public T Load<T>(IAssetInfo asset)
@@ -135,7 +139,7 @@ namespace RaisedGardenBeds
 						// Unused field:
 						"blue berry",
 						// Crafted item ID and quantity:
-						$"{entry.ItemName} {entry.RecipeCraftedCount}",
+						$"{OutdoorPotDataDefinition.TypeDefinitionId}{entry.ItemName} {entry.RecipeCraftedCount}",
 						// Recipe is bigCraftable:
 						"true",
 						// Recipe conditions (we ignore these):
