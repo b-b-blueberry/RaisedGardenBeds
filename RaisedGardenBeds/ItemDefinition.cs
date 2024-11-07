@@ -25,6 +25,10 @@ namespace RaisedGardenBeds
 		***************/
 
 		/// <summary>
+		/// Translated display text used for object variant name.
+		/// </summary>
+		public string DisplayName { get; set; }
+		/// <summary>
 		/// Quantity of this object produced when crafting.
 		/// </summary>
 		public int RecipeCraftedCount { get; set; } = 1;

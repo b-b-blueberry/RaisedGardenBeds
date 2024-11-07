@@ -16,7 +16,6 @@ namespace RaisedGardenBeds
 		internal static readonly string GameContentEndOfNightSpritesPath = Path.Combine(GameContentAssetPath, "EndOfNightSprites");
 		internal static readonly string GameContentEventDataPath = Path.Combine(GameContentAssetPath, "EventData");
 		internal static readonly string GameContentCommonTranslationDataPath = Path.Combine(GameContentAssetPath, "CommonTranslations");
-		internal static readonly string GameContentItemTranslationDataPath = Path.Combine(GameContentAssetPath, "ItemTranslations");
 
 		internal static readonly string LocalAssetPath = "assets";
 
@@ -35,8 +34,6 @@ namespace RaisedGardenBeds
 		{
 			return asset.Name.IsEquivalentTo(GameContentEndOfNightSpritesPath)
 				|| asset.Name.IsEquivalentTo(GameContentEventDataPath)
-				|| asset.Name.IsEquivalentTo(GameContentCommonTranslationDataPath)
-				|| asset.Name.IsEquivalentTo(GameContentItemTranslationDataPath);
 		}
 
 		public T Load<T>(IAssetInfo asset)
@@ -57,21 +54,6 @@ namespace RaisedGardenBeds
 			{
 				var data = new Dictionary
 					<string, Dictionary<string, string>>
-					(StringComparer.InvariantCultureIgnoreCase);
-
-				// Populate all possible language codes for translation pack support
-				string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
-				foreach (string key in keys)
-				{
-					data.Add(key, []);
-				}
-
-				return (T)(object)data;
-			}
-			if (asset.Name.IsEquivalentTo(GameContentItemTranslationDataPath))
-			{
-				var data = new Dictionary
-					<string, Dictionary<string, Dictionary<string, string>>>
 					(StringComparer.InvariantCultureIgnoreCase);
 
 				// Populate all possible language codes for translation pack support

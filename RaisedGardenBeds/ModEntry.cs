@@ -69,21 +69,6 @@ namespace RaisedGardenBeds
 			return data;
 		}
 
-		private Dictionary<string, Dictionary<string, Dictionary<string, string>>> ITData()
-		{
-			var data = new Dictionary
-				<string, Dictionary<string, Dictionary<string, string>>>
-				(StringComparer.InvariantCultureIgnoreCase);
-
-			// Populate all possible language codes for translation pack support
-			string[] keys = Enum.GetNames(typeof(StardewValley.LocalizedContentManager.LanguageCode));
-			foreach (string key in keys)
-			{
-				data.Add(key, []);
-			}
-			return data;
-		}
-
 		private void OnAssetRequested(object sender, AssetRequestedEventArgs e)
 		{
 			bool isModContent = true;
@@ -102,10 +87,6 @@ namespace RaisedGardenBeds
 			else if (e.Name.IsEquivalentTo(AssetManager.GameContentCommonTranslationDataPath))
 			{
 				e.LoadFrom(this.CTData, AssetLoadPriority.Low);
-			}
-			else if (e.Name.IsEquivalentTo(AssetManager.GameContentItemTranslationDataPath))
-			{
-				e.LoadFrom(this.ITData, AssetLoadPriority.Low);
 			}
 			else
 			{
