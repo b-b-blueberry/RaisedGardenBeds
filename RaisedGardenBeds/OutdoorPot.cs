@@ -477,7 +477,7 @@ namespace RaisedGardenBeds
 			}
 
 			// Check to ensure there are no obstructions on this tile
-			bool noTiles = l.IsTileBlockedBy(tile);
+			bool noTiles = !l.IsTileBlockedBy(tile);
 			bool noObjects = !l.Objects.ContainsKey(tile);
 			bool noCrops = (!l.terrainFeatures.ContainsKey(tile) || l.terrainFeatures[tile] is Flooring || (l.terrainFeatures[tile] is HoeDirt hoeDirt && hoeDirt.crop is null));
 			bool noFoliage = l.getLargeTerrainFeatureAt((int)tile.X, (int)tile.Y) is null;
